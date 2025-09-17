@@ -9,9 +9,9 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     // caminhos relativos à root do app: src/assets/ -> 'assets/...'
-    this.load.image('ball', 'assets/images/Balls.png');
-    this.load.image('paddle', 'assets/images/Paddles.png');
-    this.load.image('brick', 'assets/images/Bricks Full.png');
+    this.load.image('ball', 'assets/images/Ball Green.png');
+    this.load.image('paddle', 'assets/images/Paddle Gray.png');
+    this.load.image('brick', 'assets/images/Block Orange.png');
   }
 
   create() {
@@ -23,7 +23,7 @@ export default class MainScene extends Phaser.Scene {
     this.physics.world.setBoundsCollision(true, true, true, false);
 
     // Paddle
-    this.paddle = this.physics.add.image(W/2, H - 40, 'paddle')
+    this.paddle = this.physics.add.image(W/2, H - 60, 'paddle')
     .setImmovable(true)
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
@@ -32,15 +32,37 @@ export default class MainScene extends Phaser.Scene {
     this.ball = this.physics.add.image(W/2, H - 60, 'ball')
     .setCollideWorldBounds(true)
     .setBounce(1);
-    this.ball.setVelocity(150, -150);
+    this.ball.setVelocity(250, -250);
 
     // Bricks (static)
     this.bricks = this.physics.add.staticGroup();
-    const cols = 8, rows = 3, bw = 64, bh = 32;
-    const startX = (W - cols * bw) / 2 + bw / 2;
+
+    // quantidade de colunas e tal
+    const cols = 4, rows = 2;
+
+    // Tamanho desejado do brick
+    const bw = 61; // largura
+    const bh = 22; // altura
+
+    const marginX = 10; // margem horizontal entre blocos
+    const marginY = 6;  // margem vertical entre blocos
+
+    const initialX = 300; // ponto inicial X da grade
+    const initialY = 255; // ponto inicial Y da grade
+
+    const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
+
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        this.bricks.create(startX + c * bw, 100 + r * bh, 'brick');
+        const brick = this.bricks.create(
+        initialX + c * (bw + marginX),
+        initialY + r * (bh + marginY),
+        'brick'
+      );
+        brick.displayWidth = bw;
+        brick.displayHeight = bh;
+
+        brick.refreshBody();
       }
     }
 
@@ -49,7 +71,7 @@ export default class MainScene extends Phaser.Scene {
         const b = ball as Phaser.Physics.Arcade.Image;
         const p = paddle as Phaser.Physics.Arcade.Image;
         const diff = b.x - p.x;
-        b.setVelocityX(10 * diff);
+        b.setVelocityX(15 * diff);
     });
 
     this.physics.add.collider(this.ball, this.bricks, (ball, brick) => {

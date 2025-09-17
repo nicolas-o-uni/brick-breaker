@@ -9,15 +9,17 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     // caminhos relativos à root do app: src/assets/ -> 'assets/...'
-    this.load.image('ball', 'assets/images/Balls.png');
-    this.load.image('paddle', 'assets/images/Paddles.png');
-    this.load.image('brick', 'assets/images/Bricks Full.png');
+    this.load.image('ball', 'assets/images/Ball Gray.png');
+    this.load.image('paddle', 'assets/images/Paddle Blue.png');
+    this.load.image('brick', 'assets/images/Block Blue.png' );
   }
+
+    
 
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
-
+    
     // Physics world
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
@@ -32,17 +34,43 @@ export default class MainScene extends Phaser.Scene {
     this.ball = this.physics.add.image(W/2, H - 60, 'ball')
     .setCollideWorldBounds(true)
     .setBounce(1);
-    this.ball.setVelocity(160, -160);
+    this.ball.setVelocity(360, -360);
+
 
     // Bricks (static)
     this.bricks = this.physics.add.staticGroup();
-    const cols = 8, rows = 6, bw = 64, bh = 32;
-    const startX = (W - cols * bw) / 2 + bw / 2;
+    const cols = 8, rows = 6;
+
+    // Tamanho desejado do brick
+    const bw = 61; // largura
+    const bh = 22; // altura
+
+    const marginX = 10; // margem horizontal entre blocos
+    const marginY = 6;  // margem vertical entre blocos
+
+    const initialX = 300; // ponto inicial X da grade
+    const initialY = 255; // ponto inicial Y da grade
+
+    const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
+
     for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        this.bricks.create(startX + c * bw, 100 + r * bh, 'brick');
+    for (let c = 0; c < cols; c++) {
+        const brick = this.bricks.create(
+        startX + c * (bw + marginX),
+         100 + r * (bh + marginY),
+        'brick'
+    );
+        brick.displayWidth = bw;
+        brick.displayHeight = bh;
+        brick.refreshBody();
       }
     }
+
+    //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
+    //    const brick = this.bricks.create(
+    //    startX + c * (bw + marginX),
+    //    100 + r * (bh + marginY),
+    //   'brick'
 
     // Colliders
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {
