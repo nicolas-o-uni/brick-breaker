@@ -1,29 +1,25 @@
 import Phaser from 'phaser';
-import MainScene from './scenes/main-scene';
 
 let gameInstance: Phaser.Game | null = null;
 
-export function startGame(parentId = 'game-container'): Phaser.Game {
-  if (gameInstance) return gameInstance;
+// Funções gerais
+export function startGame(scene: Phaser.Scene) {
+  scene.physics.resume();
+}
 
-  const config: Phaser.Types.Core.GameConfig = {
-    type: Phaser.AUTO,
-    scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
-      parent: parentId,
-      width: 800,
-      height: 600
-    },
-    physics: {
-      default: 'arcade',
-      arcade: { gravity: { x: 0, y: 0 }, debug: false }
-    },
-    scene: [MainScene]
-  };
+export function restartLevel(scene: Phaser.Scene) {
+  scene.scene.restart();
+}
 
-  gameInstance = new Phaser.Game(config);
-  return gameInstance;
+export function nextLevel(scene: Phaser.Scene, nextSceneKey: string) {
+  scene.scene.start(nextSceneKey);
+}
+
+export function CompleteMenu(scene: Phaser.Scene) {
+  // exemplo com Angular/Ionic
+  // se não tiver acesso ao router aqui, pode emitir evento para o Angular
+  // ou usar uma callback passada da página
+  console.log("Voltar para seleção de mapas");
 }
 
 export function destroyGame() {
