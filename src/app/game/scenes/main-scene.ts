@@ -11,7 +11,7 @@ export default class MainScene extends Phaser.Scene {
     // caminhos relativos à root do app: src/assets/ -> 'assets/...'
     this.load.image('ball', 'assets/images/Ball Green.png');
     this.load.image('paddle', 'assets/images/Paddle Gray.png');
-    this.load.image('brick', 'assets/images/Block Orange.png');
+    this.load.image('brick', 'assets/images/Block Gray.png');
   }
 
   create() {
@@ -54,10 +54,10 @@ export default class MainScene extends Phaser.Scene {
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const brick = this.bricks.create(
-        initialX + c * (bw + marginX),
-        initialY + r * (bh + marginY),
-        'brick'
+          const brick = this.bricks.create(
+          startX + c * (bw + marginX),
+          100 + r * (bh + marginY),
+         'brick'
       );
         brick.displayWidth = bw;
         brick.displayHeight = bh;
@@ -65,6 +65,14 @@ export default class MainScene extends Phaser.Scene {
         brick.refreshBody();
       }
     }
+
+    
+    //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
+    //    const brick = this.bricks.create(
+    //    startX + c * (bw + marginX),
+    //    100 + r * (bh + marginY),
+    //   'brick'
+
 
     // Colliders
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {

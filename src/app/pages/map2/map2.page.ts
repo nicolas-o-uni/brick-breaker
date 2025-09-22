@@ -16,7 +16,7 @@ export class GamePage implements AfterViewInit {
   ngAfterViewInit() {
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 800,
+      width: window.innerWidth,
       height: 600,
       parent: 'game-container',
       physics: {

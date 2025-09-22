@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { GamePage } from './map2.page';
+import { Map4Page } from './map4.page';
 
-describe('Map2Page', () => {
-  let component: GamePage;
-  let fixture: ComponentFixture<GamePage>;
+describe('Map4Page', () => {
+  let component: Map4Page;
+  let fixture: ComponentFixture<Map4Page>;
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(GamePage);
+    fixture = TestBed.createComponent(Map4Page);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

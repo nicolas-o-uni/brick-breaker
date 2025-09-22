@@ -2,11 +2,11 @@ import { Component, AfterViewInit, OnDestroy } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { destroyGame } from 'src/app/game/phaser-game';
-import MainScene from 'src/app/game/scenes/main-scene';
+import Scene3 from 'src/app/game/scenes/scene3';
 
 @Component({
   selector: 'app-game',
-  templateUrl: './map1.page.html',
+  templateUrl: './map3.page.html',
   imports: [IonicModule, CommonModule],
 })
 export class GamePage implements AfterViewInit {
@@ -23,15 +23,11 @@ export class GamePage implements AfterViewInit {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 }, debug: true }
       },
-      scene: [MainScene]
+      scene: [Scene3]
     };
 
     this.game = new Phaser.Game(config);
   }
-  
-
-
-
 
   // quando sair da página, destrói o game pra evitar instâncias duplicadas
   ionViewWillLeave() {

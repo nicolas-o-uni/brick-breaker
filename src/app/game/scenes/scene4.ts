@@ -9,9 +9,9 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     // caminhos relativos à root do app: src/assets/ -> 'assets/...'
-    this.load.image('ball', 'assets/images/Ball Red.png');
-    this.load.image('paddle', 'assets/images/Paddle Blue.png');
-    this.load.image('brick', 'assets/images/Block Blue.png' );
+    this.load.image('ball', 'assets/images/Ball Gray.png');
+    this.load.image('paddle', 'assets/images/Paddle Orange.png');
+    this.load.image('brick', 'assets/images/Block Orange.png' );
   }
 
     
@@ -27,44 +27,70 @@ export default class MainScene extends Phaser.Scene {
     // Paddle
     this.paddle = this.physics.add.image(W/2, H - 40, 'paddle')
     .setImmovable(true)
+    .setDisplaySize(60, 10) // define tamanho real
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
+    
     (this.paddle!.body as any).allowGravity = false;
 
     // Ball
     this.ball = this.physics.add.image(W/2, H - 60, 'ball')
     .setCollideWorldBounds(true)
+    .setDisplaySize(12, 12)
     .setBounce(1);
-    this.ball.setVelocity(360, -360);
+    this.ball.setVelocity(460, -460);
 
 
-    // Bricks (static)
-    this.bricks = this.physics.add.staticGroup();
-    const cols = 5, rows = 4;
+// Bricks (static)
+this.bricks = this.physics.add.staticGroup();
 
-    // Tamanho desejado do brick
-    const bw = 61; // largura
-    const bh = 22; // altura
+const cols = 10, rows = 7;
 
-    const marginX = 10; // margem horizontal entre blocos
-    const marginY = 6;  // margem vertical entre blocos
+// Tamanho desejado do brick
+const bw = 21; // largura
+const bh = 12; // altura
 
-    const initialX = 300; // ponto inicial X da grade
-    const initialY = 255; // ponto inicial Y da grade
+const marginX = 10; // margem horizontal entre blocos
+const marginY = 6;  // margem vertical entre blocos
 
-    const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
+const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
 
-    for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-        const brick = this.bricks.create(
-        startX + c * (bw + marginX),
-         100 + r * (bh + marginY),
-        'brick'
+// Lista de colunas "furadas" (essas colunas serão normais na linha 6)
+const furadas = [2, 4, 6]; // você pode mudar essa lista por fase
+
+for (let r = 0; r < rows; r++) {
+  for (let c = 0; c < cols; c++) {
+    const brick = this.bricks.create(
+      startX + c * (bw + marginX),
+      100 + r * (bh + marginY),
+      'brick'
     );
-        brick.displayWidth = bw;
-        brick.displayHeight = bh;
-        brick.refreshBody();
+
+    brick.displayWidth = bw;
+    brick.displayHeight = bh;
+    brick.refreshBody();
+
+    // 🔹 linha 6 normalmente indestrutível
+    if (r === 6) {
+      if (furadas.includes(c)) {
+        // se a coluna esta na lista, bloco eh normal
+        brick.setData('indestructible', false);
+      } else {
+        // se nn esta, bloco eh indestrutível
+        brick.setData('indestructible', true);
+        brick.setTint(0xff0000); // vermelho
       }
+    } else {
+      brick.setData('indestructible', false);
     }
+  }
+}
+    this.physics.add.collider(this.ball, this.bricks, (ball, brick: any) => {
+  if (!brick.getData('indestructible')) {
+    brick.destroy();
+  }
+  // se for indestrutível, nn destroi (só rebate)
+});
+
 
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
     //    const brick = this.bricks.create(

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { GamePage } from './map2.page';
+import { GamePage  } from './map3.page';
 
-describe('Map2Page', () => {
+describe('Map3Page', () => {
   let component: GamePage;
   let fixture: ComponentFixture<GamePage>;
 
