@@ -1,9 +1,12 @@
 import Phaser from 'phaser';
+import { restartLevel, CompleteMenu } from 'src/app/game/phaser-game';
 
 export default class MainScene extends Phaser.Scene {
   ball!: Phaser.Physics.Arcade.Image;
+  balls!: Phaser.Physics.Arcade.Group;
   paddle!: Phaser.Physics.Arcade.Image;
   bricks!: Phaser.Physics.Arcade.StaticGroup;
+  unbreakableBricks!: Phaser.Physics.Arcade.StaticGroup;
 
   constructor() { super({ key: 'MainScene' }); }
 
@@ -22,20 +25,54 @@ export default class MainScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
+    // Cria grupo de bolas antes de criar a primeira bola
+    this.balls = this.physics.add.group({
+      defaultKey: 'ball',
+      maxSize: 10,
+    });
+
+    // Cria a bola inicial
+    this.ball = this.physics.add.image(W / 2, H - 130, 'ball') as Phaser.Physics.Arcade.Image;
+    this.ball.setCollideWorldBounds(true);
+    this.ball.setBounce(1);
+    (this.ball.body as Phaser.Physics.Arcade.Body).allowGravity = false;
+
+    // Adiciona a bola ao grupo
+    this.balls.add(this.ball);
+
+    // Lógica para todas as bolas do grupo
+    this.balls.getChildren().forEach((b) => {
+      const ball = b as Phaser.Physics.Arcade.Image;
+      if (!ball || !ball.body) return;
+      ball.setCollideWorldBounds(true);
+      ball.setBounce(1);
+      (ball.body as Phaser.Physics.Arcade.Body).onWorldBounds = true;
+    });
+
+    //pause
+    this.physics.pause();
+    this.input.on('pointerdown', () => {
+      this.physics.resume();
+      this.balls.getChildren().forEach((b) => {
+        const ball = b as Phaser.Physics.Arcade.Image;
+        if (!ball || !ball.body) return;
+
+        // Só lança se a bola estiver parada
+        if (ball.body.velocity.x === 0 && ball.body.velocity.y === 0) {
+          this.launchBall(ball); // função launchBall agora recebe bola como parâmetro
+        }
+      });
+    });
+
     // Paddle
     this.paddle = this.physics.add.image(W/2, H - 60, 'paddle')
     .setImmovable(true)
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
 
-    // Ball
-    this.ball = this.physics.add.image(W/2, H - 60, 'ball')
-    .setCollideWorldBounds(true)
-    .setBounce(1);
-    this.ball.setVelocity(250, -250);
-
-    // Bricks (static)
+    // Bricks
     this.bricks = this.physics.add.staticGroup();
+    this.unbreakableBricks = this.physics.add.staticGroup();//tijolos inquebraveis
 
     // quantidade de colunas e tal
     const cols = 4, rows = 2;
@@ -84,7 +121,16 @@ export default class MainScene extends Phaser.Scene {
 
     this.physics.add.collider(this.ball, this.bricks, (ball, brick) => {
         brick.destroy();
+        
+        if (this.bricks.countActive() === 0) {
+          this.scene.pause();
+
+          // menu ao completar fase
+          CompleteMenu(this);
+        }
     });
+
+    this.physics.add.collider(this.balls, this.unbreakableBricks);
 
     // Input: mover paddle com pointer/touch
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
@@ -92,16 +138,34 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
-  private hitPaddle(ball: Phaser.Physics.Arcade.Image, paddle: Phaser.Physics.Arcade.Image) {
-    const diff = (ball.x - paddle.x);
-    ball.setVelocityX(10 * diff);
-  }
+  // Função de lançamento da bola
+  launchBall(ball?: Phaser.Physics.Arcade.Image) {
+    const b = ball || this.ball;
+    if (!b || !b.body) return;
 
-  private hitBrick(ball: Phaser.Physics.Arcade.Image, brick: Phaser.GameObjects.GameObject) {
-    brick.destroy();
+    const speed = 250;
+
+    b.setVelocityX(0);
+    b.setVelocityY(speed);
   }
 
   override update(_time: number, _delta: number): void {
-    // por enquanto não uso nada aqui
+    // Aqui você pode adicionar lógica por frame, modificadores temporários, etc.
+
+    //reset
+    const H = this.scale.height;
+
+    this.balls.getChildren().forEach((b) => {
+      const ball = b as Phaser.Physics.Arcade.Image;
+
+      // Se a bola passou do limite inferior
+      if (ball.y > H) {
+        ball.destroy();
+
+        if (this.balls.countActive() === 0) {
+          restartLevel(this);
+        }
+      }
+    });
   }
 }
