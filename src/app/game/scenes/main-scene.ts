@@ -7,6 +7,7 @@ export default class MainScene extends Phaser.Scene {
   paddle!: Phaser.Physics.Arcade.Image;
   bricks!: Phaser.Physics.Arcade.StaticGroup;
   unbreakableBricks!: Phaser.Physics.Arcade.StaticGroup;
+  specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
 
   constructor() { super({ key: 'MainScene' }); }
 
@@ -29,6 +30,9 @@ export default class MainScene extends Phaser.Scene {
     this.balls = this.physics.add.group({
       defaultKey: 'ball',
       maxSize: 10,
+      collideWorldBounds: true,
+      bounceX: 1,
+      bounceY: 1,
     });
 
     // Cria a bola inicial
@@ -91,11 +95,11 @@ export default class MainScene extends Phaser.Scene {
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-          const brick = this.bricks.create(
+        const brick = this.bricks.create(
           startX + c * (bw + marginX),
           100 + r * (bh + marginY),
          'brick'
-      );
+        );
         brick.displayWidth = bw;
         brick.displayHeight = bh;
 
@@ -103,13 +107,15 @@ export default class MainScene extends Phaser.Scene {
       }
     }
 
-    
+    this.specialBlocks = this.setSpecialBlocks(1); // O número determina a quantidade de blocos especiais
+
+      
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
     //    const brick = this.bricks.create(
     //    startX + c * (bw + marginX),
     //    100 + r * (bh + marginY),
     //   'brick'
-
+    
 
     // Colliders
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {
@@ -119,11 +125,22 @@ export default class MainScene extends Phaser.Scene {
         b.setVelocityX(15 * diff);
     });
 
-    this.physics.add.collider(this.ball, this.bricks, (ball, brick) => {
-        brick.destroy();
+    this.physics.add.collider(this.balls, this.bricks, (ball, brick) => {
+      // Verifica se o bloco é especial antes de destruir
+      if (
+        this.specialBlocks &&
+        this.specialBlocks.includes(brick as Phaser.Physics.Arcade.Image)
+      ) {
+        this.multiplyBalls(); // Multiplica ao destruir bloco especial
+      }  
+      
+      brick.destroy();
         
         if (this.bricks.countActive() === 0) {
           this.scene.pause();
+
+          // definir proxima fase
+          this.registry.set('faseAtual', 2);
 
           // menu ao completar fase
           CompleteMenu(this);
@@ -149,8 +166,61 @@ export default class MainScene extends Phaser.Scene {
     b.setVelocityY(speed);
   }
 
+  multiplyBalls() {
+    const newBallsCount = this.balls.getChildren().length * 2;
+
+    for (let i = this.balls.getChildren().length; i < newBallsCount; i++) {
+      let newBall = this.physics.add.image(
+        this.paddle.x,
+        this.paddle.y - 50,
+        'ball'
+      );
+      this.balls.add(newBall);
+
+      newBall.setCollideWorldBounds(true);
+      newBall.setBounce(1);
+      newBall.setVelocityY(-280);
+      newBall.setVelocityX(Phaser.Math.Between(-200, 200));
+
+      this.physics.add.collider(newBall, this.paddle, (ball, paddle) => {
+        const b = ball as Phaser.Physics.Arcade.Image;
+        const p = paddle as Phaser.Physics.Arcade.Image;
+        const diff = b.x - p.x;
+        b.setVelocityX(15 * diff);
+      });
+    }
+  }
+
+  // NOVA função para selecionar múltiplos blocos especiais
+  setSpecialBlocks(minSpecialBlocks = 3): Phaser.Physics.Arcade.Image[] {
+    const totalBricks = this.bricks.getLength();
+    const specialBlocks: Phaser.Physics.Arcade.Image[] = [];
+
+    if (totalBricks < minSpecialBlocks) {
+      console.warn('Não há blocos suficientes para selecionar especiais.');
+      return specialBlocks;
+    }
+
+    const selectedIndices = new Set<number>();
+    while (selectedIndices.size < minSpecialBlocks) {
+      const randomIndex = Phaser.Math.Between(0, totalBricks - 1);
+      selectedIndices.add(randomIndex);
+    }
+
+    const allBricks =
+      this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+    selectedIndices.forEach((index) => {
+      const specialBlock = allBricks[index];
+      specialBlock.setTint(0xff0000); // destaca em vermelho
+      specialBlocks.push(specialBlock);
+    });
+
+    return specialBlocks;
+  }
+
   override update(_time: number, _delta: number): void {
-    // Aqui você pode adicionar lógica por frame, modificadores temporários, etc.
+    // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
 
     //reset
     const H = this.scale.height;

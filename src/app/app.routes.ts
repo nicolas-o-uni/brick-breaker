@@ -7,17 +7,17 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/principal/principal.page').then(m => m.PrincipalPage)
   },
   {
-    path: '',
-    redirectTo: 'principal',
-    pathMatch: 'full',
+  path: '',
+  redirectTo: 'principal',
+  pathMatch: 'full',
   },
   {
-    path: 'map1',
-    loadComponent: () => import('./pages/map1/map1.page').then((m) => m.GamePage),
+  path: 'map1',
+  loadComponent: () => import('./pages/map1/map1.page').then((m) => m.GamePage),
   },
   {
-    path: 'map2',
-    loadComponent: () => import('./pages/map2/map2.page').then(m => m.GamePage)
+  path: 'map2',
+  loadComponent: () => import('./pages/map2/map2.page').then( m => m.GamePage)
   },
   {
     path: 'map3',
@@ -27,8 +27,4 @@ export const routes: Routes = [
     path: 'map4',
     loadComponent: () => import('./pages/map4/map4.page').then( m => m.GamePage)
   },
-
-
 ];
-
-

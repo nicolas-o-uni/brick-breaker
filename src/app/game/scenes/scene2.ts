@@ -66,7 +66,7 @@ export default class MainScene extends Phaser.Scene {
     });
 
     // Paddle
-    this.paddle = this.physics.add.image(W/2, H - 60, 'paddle')
+    this.paddle = this.physics.add.image(W/2, H - 40, 'paddle')
     .setImmovable(true)
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
@@ -121,6 +121,9 @@ export default class MainScene extends Phaser.Scene {
         
         if (this.bricks.countActive() === 0) {
           this.scene.pause();
+
+          // definir proxima fase
+          this.registry.set('faseAtual', 3);
 
           // menu ao completar fase
           CompleteMenu(this);
