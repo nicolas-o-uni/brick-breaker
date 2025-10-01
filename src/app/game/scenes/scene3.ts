@@ -23,6 +23,8 @@ export default class MainScene extends Phaser.Scene {
     const H = this.scale.height;
 
     // Physics world
+    this.physics.world.drawDebug = false;
+    this.physics.world.debugGraphic.clear();
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
@@ -113,7 +115,7 @@ export default class MainScene extends Phaser.Scene {
     }
     }
 
-    this.specialBlocks = this.setSpecialBlocks(1); // O número determina a quantidade de blocos especiais
+    this.specialBlocks = this.setSpecialBlocks(3); // O número determina a quantidade de blocos especiais
     
           
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
@@ -144,7 +146,15 @@ export default class MainScene extends Phaser.Scene {
             brick.destroy();
         }
         
-        if (this.bricks.countActive() === 0) {
+        const allBricks =
+        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+        // 🔸 Filtra apenas os blocos que são quebráveis
+        const breakableBricks = allBricks.filter(
+        (brick) => !brick.getData('indestructible')
+        );
+
+        if (breakableBricks.length === 0) {
             this.scene.pause();
 
             // definir proxima fase
@@ -183,6 +193,9 @@ export default class MainScene extends Phaser.Scene {
             this.paddle.y - 50,
             'ball'
             );
+            // 🔸 Copia o tamanho da bola original
+            newBall.setDisplaySize(this.ball.displayWidth, this.ball.displayHeight);
+            
             this.balls.add(newBall);
 
             newBall.setCollideWorldBounds(true);
@@ -201,27 +214,31 @@ export default class MainScene extends Phaser.Scene {
 
     // NOVA função para selecionar múltiplos blocos especiais
     setSpecialBlocks(minSpecialBlocks = 3): Phaser.Physics.Arcade.Image[] {
-        const totalBricks = this.bricks.getLength();
+        const allBricks =
+        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+        // 🔸 Filtra apenas os blocos que são quebráveis
+        const breakableBricks = allBricks.filter(
+        (brick) => !brick.getData('indestructible')
+        );
+
         const specialBlocks: Phaser.Physics.Arcade.Image[] = [];
 
-        if (totalBricks < minSpecialBlocks) {
-            console.warn('Não há blocos suficientes para selecionar especiais.');
-            return specialBlocks;
+        if (breakableBricks.length < minSpecialBlocks) {
+        console.warn('Não há blocos quebráveis suficientes para especiais.');
+        return specialBlocks;
         }
 
         const selectedIndices = new Set<number>();
         while (selectedIndices.size < minSpecialBlocks) {
-            const randomIndex = Phaser.Math.Between(0, totalBricks - 1);
-            selectedIndices.add(randomIndex);
+        const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
+        selectedIndices.add(randomIndex);
         }
 
-        const allBricks =
-            this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
-
         selectedIndices.forEach((index) => {
-            const specialBlock = allBricks[index];
-            specialBlock.setTint(0xff0000); // destaca em vermelho
-            specialBlocks.push(specialBlock);
+        const specialBlock = breakableBricks[index];
+        specialBlock.setTint(0xff0000); // destaca em vermelho
+        specialBlocks.push(specialBlock);
         });
 
         return specialBlocks;
