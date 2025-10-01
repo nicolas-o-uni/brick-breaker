@@ -7,6 +7,7 @@ export default class MainScene extends Phaser.Scene {
   paddle!: Phaser.Physics.Arcade.Image;
   bricks!: Phaser.Physics.Arcade.StaticGroup;
   unbreakableBricks!: Phaser.Physics.Arcade.StaticGroup;
+  specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
 
   constructor() { super({ key: 'MainScene' }); }
 
@@ -23,6 +24,8 @@ export default class MainScene extends Phaser.Scene {
     const H = this.scale.height;
     
     // Physics world
+    this.physics.world.drawDebug = false;
+    this.physics.world.debugGraphic.clear();
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
@@ -108,6 +111,8 @@ export default class MainScene extends Phaser.Scene {
     //    100 + r * (bh + marginY),
     //   'brick'
 
+    this.specialBlocks = this.setSpecialBlocks(5);
+
     // Colliders
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {
         const b = ball as Phaser.Physics.Arcade.Image;
@@ -116,17 +121,35 @@ export default class MainScene extends Phaser.Scene {
         b.setVelocityX(10 * diff);
     });
 
-    this.physics.add.collider(this.ball, this.bricks, (ball, brick) => {
-        brick.destroy();
+    this.physics.add.collider(this.balls, this.bricks, (ball, brick: any) => {
+        // Verifica se o bloco é especial antes de destruir
+        if (
+        this.specialBlocks &&
+        this.specialBlocks.includes(brick as Phaser.Physics.Arcade.Image)
+        ) {
+        this.multiplyBalls(); // Multiplica ao destruir bloco especial
+        }  
         
-        if (this.bricks.countActive() === 0) {
-          this.scene.pause();
+        if (!brick.getData('indestructible')) {
+            brick.destroy();
+        }
+        
+        const allBricks =
+        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
 
-          // definir proxima fase
-          this.registry.set('faseAtual', 3);
+        // 🔸 Filtra apenas os blocos que são quebráveis
+        const breakableBricks = allBricks.filter(
+        (brick) => !brick.getData('indestructible')
+        );
 
-          // menu ao completar fase
-          CompleteMenu(this);
+        if (breakableBricks.length === 0) {
+            this.scene.pause();
+
+            // definir proxima fase
+            this.registry.set('faseAtual', 4);
+
+            // menu ao completar fase
+            CompleteMenu(this);
         }
     });
 
@@ -147,6 +170,57 @@ export default class MainScene extends Phaser.Scene {
 
     b.setVelocityX(0);
     b.setVelocityY(speed);
+  }
+
+  multiplyBalls() {
+    const newBallsCount = this.balls.getChildren().length * 2;
+
+    for (let i = this.balls.getChildren().length; i < newBallsCount; i++) {
+      let newBall = this.physics.add.image(
+        this.paddle.x,
+        this.paddle.y - 50,
+        'ball'
+      );
+      this.balls.add(newBall);
+
+      newBall.setCollideWorldBounds(true);
+      newBall.setBounce(1);
+      newBall.setVelocityY(-280);
+      newBall.setVelocityX(Phaser.Math.Between(-200, 200));
+
+      this.physics.add.collider(newBall, this.paddle, (ball, paddle) => {
+        const b = ball as Phaser.Physics.Arcade.Image;
+        const p = paddle as Phaser.Physics.Arcade.Image;
+        const diff = b.x - p.x;
+        b.setVelocityX(15 * diff);
+      });
+    }
+  }
+
+  setSpecialBlocks(minSpecialBlocks = 3): Phaser.Physics.Arcade.Image[] {
+    const totalBricks = this.bricks.getLength();
+    const specialBlocks: Phaser.Physics.Arcade.Image[] = [];
+
+    if (totalBricks < minSpecialBlocks) {
+      console.warn('Não há blocos suficientes para selecionar especiais.');
+      return specialBlocks;
+    }
+
+    const selectedIndices = new Set<number>();
+    while (selectedIndices.size < minSpecialBlocks) {
+      const randomIndex = Phaser.Math.Between(0, totalBricks - 1);
+      selectedIndices.add(randomIndex);
+    }
+
+    const allBricks = this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+    selectedIndices.forEach((index) => {
+      const specialBlock = allBricks[index];
+      specialBlock.setTint(0x162361);
+      specialBlocks.push(specialBlock);
+    });
+
+    return specialBlocks;
   }
 
   override update(_time: number, _delta: number): void {
