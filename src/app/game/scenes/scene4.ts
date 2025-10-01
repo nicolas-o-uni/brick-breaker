@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { restartLevel, CompleteMenu } from 'src/app/game/phaser-game';
 
-
 export default class MainScene extends Phaser.Scene {
   ball!: Phaser.Physics.Arcade.Image;
   balls!: Phaser.Physics.Arcade.Group;
@@ -24,6 +23,8 @@ export default class MainScene extends Phaser.Scene {
     const H = this.scale.height;
 
     // Physics world
+    this.physics.world.drawDebug = false;
+    this.physics.world.debugGraphic.clear();
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
@@ -122,14 +123,9 @@ export default class MainScene extends Phaser.Scene {
         }
     }
     }
-        this.physics.add.collider(this.ball, this.bricks, (ball, brick: any) => {
-    if (!brick.getData('indestructible')) {
-        brick.destroy();
-    }
-    // se for indestrutível, nn destroi (só rebate)
-    });
+        
 
-    this.specialBlocks = this.setSpecialBlocks(1); // O número determina a quantidade de blocos especiais
+    this.specialBlocks = this.setSpecialBlocks(3); // O número determina a quantidade de blocos especiais
     
           
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
@@ -160,11 +156,19 @@ export default class MainScene extends Phaser.Scene {
             brick.destroy();
         }
         
-        if (this.bricks.countActive() === 0) {
+        const allBricks =
+        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+        // 🔸 Filtra apenas os blocos que são quebráveis
+        const breakableBricks = allBricks.filter(
+        (brick) => !brick.getData('indestructible')
+        );
+
+        if (breakableBricks.length === 0) {
             this.scene.pause();
 
             // definir proxima fase
-            this.registry.set('faseAtual', 5);
+            this.registry.set('faseAtual', 4);
 
             // menu ao completar fase
             CompleteMenu(this);
@@ -202,6 +206,7 @@ export default class MainScene extends Phaser.Scene {
             this.balls.add(newBall);
 
             newBall.setCollideWorldBounds(true);
+            newBall.setDisplaySize(12, 12)
             newBall.setBounce(1);
             newBall.setVelocityY(-360);
             newBall.setVelocityX(Phaser.Math.Between(-360, 360));
@@ -236,7 +241,7 @@ export default class MainScene extends Phaser.Scene {
 
         selectedIndices.forEach((index) => {
             const specialBlock = allBricks[index];
-            specialBlock.setTint(0xff0000); // destaca em vermelho
+            specialBlock.setTint(0x0AFA90); // destaca em vermelho
             specialBlocks.push(specialBlock);
         });
 
