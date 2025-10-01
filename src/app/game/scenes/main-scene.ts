@@ -183,49 +183,56 @@ export default class MainScene extends Phaser.Scene {
 
     for (let i = this.balls.getChildren().length; i < newBallsCount; i++) {
       let newBall = this.physics.add.image(
-        this.paddle.x,
-        this.paddle.y - 50,
-        'ball'
+      this.paddle.x,
+      this.paddle.y - 50,
+      'ball'
       );
+      // 🔸 Copia o tamanho da bola original
+      newBall.setDisplaySize(this.ball.displayWidth, this.ball.displayHeight);
+      
       this.balls.add(newBall);
 
       newBall.setCollideWorldBounds(true);
       newBall.setBounce(1);
-      newBall.setVelocityY(-280);
-      newBall.setVelocityX(Phaser.Math.Between(-200, 200));
+      newBall.setVelocityY(-360);
+      newBall.setVelocityX(Phaser.Math.Between(-360, 360));
 
       this.physics.add.collider(newBall, this.paddle, (ball, paddle) => {
-        const b = ball as Phaser.Physics.Arcade.Image;
-        const p = paddle as Phaser.Physics.Arcade.Image;
-        const diff = b.x - p.x;
-        b.setVelocityX(15 * diff);
+      const b = ball as Phaser.Physics.Arcade.Image;
+      const p = paddle as Phaser.Physics.Arcade.Image;
+      const diff = b.x - p.x;
+      b.setVelocityX(10 * diff);
       });
     }
   }
 
   // NOVA função para selecionar múltiplos blocos especiais
   setSpecialBlocks(minSpecialBlocks = 3): Phaser.Physics.Arcade.Image[] {
-    const totalBricks = this.bricks.getLength();
+    const allBricks =
+    this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+    // 🔸 Filtra apenas os blocos que são quebráveis
+    const breakableBricks = allBricks.filter(
+    (brick) => !brick.getData('indestructible')
+    );
+
     const specialBlocks: Phaser.Physics.Arcade.Image[] = [];
 
-    if (totalBricks < minSpecialBlocks) {
-      console.warn('Não há blocos suficientes para selecionar especiais.');
-      return specialBlocks;
+    if (breakableBricks.length < minSpecialBlocks) {
+    console.warn('Não há blocos quebráveis suficientes para especiais.');
+    return specialBlocks;
     }
 
     const selectedIndices = new Set<number>();
     while (selectedIndices.size < minSpecialBlocks) {
-      const randomIndex = Phaser.Math.Between(0, totalBricks - 1);
-      selectedIndices.add(randomIndex);
+    const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
+    selectedIndices.add(randomIndex);
     }
 
-    const allBricks =
-      this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
-
     selectedIndices.forEach((index) => {
-      const specialBlock = allBricks[index];
-      specialBlock.setTint(0xff0000); // destaca em vermelho
-      specialBlocks.push(specialBlock);
+    const specialBlock = breakableBricks[index];
+    specialBlock.setTint(0xff0000); // destaca em vermelho
+    specialBlocks.push(specialBlock);
     });
 
     return specialBlocks;
