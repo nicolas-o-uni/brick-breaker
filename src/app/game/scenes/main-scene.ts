@@ -23,6 +23,8 @@ export default class MainScene extends Phaser.Scene {
     const H = this.scale.height;
 
     // Physics world
+    this.physics.world.drawDebug = false;
+    this.physics.world.debugGraphic.clear();
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
@@ -125,25 +127,35 @@ export default class MainScene extends Phaser.Scene {
         b.setVelocityX(15 * diff);
     });
 
-    this.physics.add.collider(this.balls, this.bricks, (ball, brick) => {
-      // Verifica se o bloco é especial antes de destruir
-      if (
+    this.physics.add.collider(this.balls, this.bricks, (ball, brick: any) => {
+        // Verifica se o bloco é especial antes de destruir
+        if (
         this.specialBlocks &&
         this.specialBlocks.includes(brick as Phaser.Physics.Arcade.Image)
-      ) {
+        ) {
         this.multiplyBalls(); // Multiplica ao destruir bloco especial
-      }  
-      
-      brick.destroy();
+        }  
         
-        if (this.bricks.countActive() === 0) {
-          this.scene.pause();
+        if (!brick.getData('indestructible')) {
+            brick.destroy();
+        }
+        
+        const allBricks =
+        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
 
-          // definir proxima fase
-          this.registry.set('faseAtual', 2);
+        // 🔸 Filtra apenas os blocos que são quebráveis
+        const breakableBricks = allBricks.filter(
+        (brick) => !brick.getData('indestructible')
+        );
 
-          // menu ao completar fase
-          CompleteMenu(this);
+        if (breakableBricks.length === 0) {
+            this.scene.pause();
+
+            // definir proxima fase
+            this.registry.set('faseAtual', 4);
+
+            // menu ao completar fase
+            CompleteMenu(this);
         }
     });
 
