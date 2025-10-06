@@ -27,4 +27,8 @@ export const routes: Routes = [
     path: 'map4',
     loadComponent: () => import('./pages/map4/map4.page').then( m => m.GamePage)
   },
+   {
+    path: 'map5',
+    loadComponent: () => import('./pages/map5/map5.page').then( m => m.GamePage)
+  }
 ];

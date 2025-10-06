@@ -78,8 +78,9 @@ export default class MainScene extends Phaser.Scene {
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
 
-    // Bricks
-    this.bricks = this.physics.add.staticGroup();
+    // Criação e de mapa, realocação de blocos, destrutives quantos indestrutiveis 
+   
+this.bricks = this.physics.add.staticGroup();
 this.unbreakableBricks = this.physics.add.staticGroup();
 
 const bw = 21; // largura do bloco
@@ -95,17 +96,17 @@ const startY = 60;
 // Matriz do layout
 // N = nenhum bloco, Y = amarelo, P = roxo, G = verde
 const layout = [
-  "PNNNNNNNNNNNNNNNNN",
-  "PPNNNNNNNNIIIINNNN",
-  "IIIIIIIINNNNNNNNNN",
-  "PPPNNGGGGGGGGGNPPP",
-  "PPNNNNGGGGGGGNNNPP",
-  "PNNNNNNGGGGGNNNNNP",
-  "NNNNNNGGGGGGGNNNNN",
-  "NNNNNGGGGGGGGGNNNN",
-  "NNNNNNNNNNNNNNNNNN",
-  "NNNNNNNNNNNNNNNNNN",
-  "IINNIIIINNIIINNNII",
+  "PPPNNYYYYYYYNNNNNP",
+  "PPNNNNYYYYYNNNNNPP",
+  "NNNNNNIIIIINNNNPPP",
+  "PPPPNGNNYNNGNIIIII",
+  "IIIIIIIINNNNNNPPPP",
+  "PPPNNNNIIIINNNNPPP",
+  "PPNNNGGNNNGGNNNIPP",
+  "PNNNGGNNYNNGGNINNP",
+  "NNNGGNNYYYNNGINNNI",
+  "NNNNNNYYYYYNINNNIN",
+  "IINNIIIIIIIINNNIII",
 ];
 
 for (let r = 0; r < layout.length; r++) {
@@ -124,16 +125,16 @@ for (let r = 0; r < layout.length; r++) {
     // Aplica cor conforme letra
     switch (char) {
       case "Y":
-        brick.setTint(0xffeb3b); // amarelo
+        brick.setTint(0x00F000); // amarelo
         break;
       case "P":
         brick.setTint(0x9c27b0); // roxo
         break;
       case "G":
-        brick.setTint(0x4caf50); // verde
+        brick.setTint(0x4c00F0); // verde
         break;
         case "I":
-        brick.setTint(0xff13f0); // indestrutivel
+        brick.setTint(0x008800); // indestrutivel
         brick.setData("indestructible", true);
         break
     }
