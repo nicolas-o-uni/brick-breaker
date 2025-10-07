@@ -25,6 +25,8 @@ export default class MainScene extends Phaser.Scene {
     const H = this.scale.height;
 
     // Physics world
+    this.physics.world.drawDebug = false;
+    this.physics.world.debugGraphic.clear();
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
@@ -118,7 +120,7 @@ export default class MainScene extends Phaser.Scene {
       }
     }
 
-    this.specialBlocks = this.setSpecialBlocks(10); // O número determina a quantidade de blocos especiais
+    this.specialBlocks = this.setSpecialBlocks(15); // O número determina a quantidade de blocos especiais
 
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
     //    const brick = this.bricks.create(
@@ -147,7 +149,15 @@ export default class MainScene extends Phaser.Scene {
         brick.destroy();
       }
 
-      if (this.bricks.countActive() === 0) {
+      const allBricks =
+        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+      // 🔸 Filtra apenas os blocos que são quebráveis
+      const breakableBricks = allBricks.filter(
+        (brick) => !brick.getData('indestructible')
+      );
+
+      if (breakableBricks.length === 0) {
         this.scene.pause();
 
         // definir proxima fase
@@ -175,14 +185,14 @@ export default class MainScene extends Phaser.Scene {
     const b = ball || this.ball;
     if (!b || !b.body) return;
 
-    const speed = 360;
+    const speed = -360;
 
     b.setVelocityX(0);
     b.setVelocityY(speed);
   }
 
   multiplyBalls() {
-    const newBallsCount = this.balls.getChildren().length * 2;
+    const newBallsCount = this.balls.getChildren().length + 1;
 
     for (let i = this.balls.getChildren().length; i < newBallsCount; i++) {
       let newBall = this.physics.add.image(
@@ -190,7 +200,6 @@ export default class MainScene extends Phaser.Scene {
         this.paddle.y - 50,
         'ball'
       );
-
       // 🔸 Copia o tamanho da bola original
       newBall.setDisplaySize(this.ball.displayWidth, this.ball.displayHeight);
 
@@ -201,7 +210,7 @@ export default class MainScene extends Phaser.Scene {
       newBall.setVelocityY(-360);
       newBall.setVelocityX(Phaser.Math.Between(-360, 360));
 
-      (newBall.body as Phaser.Physics.Arcade.Body).allowGravity = false;
+      this.launchBall(newBall);
 
       this.physics.add.collider(newBall, this.paddle, (ball, paddle) => {
         const b = ball as Phaser.Physics.Arcade.Image;
