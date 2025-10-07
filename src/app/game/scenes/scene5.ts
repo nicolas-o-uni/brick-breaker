@@ -86,7 +86,7 @@ this.unbreakableBricks = this.physics.add.staticGroup();
 const bw = 21; // largura do bloco
 const bh = 12; // altura do bloco
 const marginX = 1;
-const marginY = 10;
+const marginY = 4;
 
 const cols = 18; // largura total do mapa
 const rows = 12; // altura total
@@ -96,17 +96,18 @@ const startY = 60;
 // Matriz do layout
 // N = nenhum bloco, Y = amarelo, P = roxo, G = verde
 const layout = [
-  "PPPNNYYYYYYYNNNNNP",
-  "PPNNNNYYYYYNNNNNPP",
-  "NNNNNNIIIIINNNNPPP",
-  "PPPPNGNNYNNGNIIIII",
-  "IIIIIIIINNNNNNPPPP",
-  "PPPNNNNIIIINNNNPPP",
-  "PPNNNGGNNNGGNNNIPP",
-  "PNNNGGNNYNNGGNINNP",
-  "NNNGGNNYYYNNGINNNI",
-  "NNNNNNYYYYYNINNNIN",
-  "IINNIIIIIIIINNNIII",
+  "NNNNNNYYYYYNNNNNNN",
+  "PPPNYYYYYYYYYNNNNP",
+  "PPNYNNYYYYYNNYNNPP",
+  "NNNYNNYNNNYNNYNPPP",
+  "PPPPYYNNYNNYYIIIII",
+  "IIIIINNNNNNNNNPPPP",
+  "PPPNNNNNNNNNNNNPPP",
+  "PPNNNGGNNNGGNNNNPP",
+  "PNNNGGNNYNNGGNNNNP",
+  "NNNGGNNYYYNNGGNNNN",
+  "NNNNNNYYYYYNNNNNNN",
+  "IINNNIIIIIIINNNIII",
 ];
 
 for (let r = 0; r < layout.length; r++) {
@@ -125,16 +126,16 @@ for (let r = 0; r < layout.length; r++) {
     // Aplica cor conforme letra
     switch (char) {
       case "Y":
-        brick.setTint(0x00F000); // amarelo
+        brick.setTintFill(0x00F000); // amarelo
         break;
       case "P":
-        brick.setTint(0x9c27b0); // roxo
+        brick.setTintFill(0x9c27b0); // roxo
         break;
       case "G":
-        brick.setTint(0x4c00F0); // verde
+        brick.setTintFill(0x00FF00); // verde
         break;
         case "I":
-        brick.setTint(0x008800); // indestrutivel
+        brick.setTintFill(0xFF4C4C); // indestrutivel
         brick.setData("indestructible", true);
         break
     }
@@ -142,7 +143,7 @@ for (let r = 0; r < layout.length; r++) {
 
     
   }
-}   this.specialBlocks = this.setSpecialBlocks(3); // O número determina a quantidade de blocos especiais
+}   this.specialBlocks = this.setSpecialBlocks(5); // O número determina a quantidade de blocos especiais
     
           
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
@@ -228,6 +229,7 @@ for (let r = 0; r < layout.length; r++) {
             newBall.setCollideWorldBounds(true);
             newBall.setDisplaySize(12, 12)
             newBall.setBounce(1);
+            newBall.setTintFill(0xFFFFFF);
             newBall.setVelocityY(-360);
             newBall.setVelocityX(Phaser.Math.Between(-360, 360));
 
@@ -265,7 +267,7 @@ for (let r = 0; r < layout.length; r++) {
 
         selectedIndices.forEach((index) => {
         const specialBlock = breakableBricks[index];
-        specialBlock.setTint(0xff0000); // destaca em vermelho
+        specialBlock.setTintFill(0x00FFFF); // destaca em vermelho
         specialBlocks.push(specialBlock);
         });
 

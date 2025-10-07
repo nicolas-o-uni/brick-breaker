@@ -13,15 +13,16 @@ export default class MainScene extends Phaser.Scene {
 
   preload() {
     // caminhos relativos à root do app: src/assets/ -> 'assets/...'
-    this.load.image('ball', 'assets/images/Ball Green.png');
-    this.load.image('paddle', 'assets/images/Paddle Gray.png');
-    this.load.image('brick', 'assets/images/Block Gray.png');
+    this.load.image('ball', 'assets/images/Ball Red.png');
+    this.load.image('paddle', 'assets/images/Paddle Blue.png');
+    this.load.image('brick', 'assets/images/Block Blue.png' );
   }
+
 
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
-
+    
     // Physics world
     this.physics.world.drawDebug = false;
     this.physics.world.debugGraphic.clear();
@@ -32,9 +33,6 @@ export default class MainScene extends Phaser.Scene {
     this.balls = this.physics.add.group({
       defaultKey: 'ball',
       maxSize: 10,
-      collideWorldBounds: true,
-      bounceX: 1,
-      bounceY: 1,
     });
 
     // Cria a bola inicial
@@ -52,6 +50,8 @@ export default class MainScene extends Phaser.Scene {
       if (!ball || !ball.body) return;
       ball.setCollideWorldBounds(true);
       ball.setBounce(1);
+      ball.setTintFill(0xFFFFFF);
+      ball.setDisplaySize(15,15);
       (ball.body as Phaser.Physics.Arcade.Body).onWorldBounds = true;
     });
 
@@ -71,52 +71,76 @@ export default class MainScene extends Phaser.Scene {
     });
 
     // Paddle
-    this.paddle = this.physics.add.image(W/2, H - 60, 'paddle')
+    this.paddle = this.physics.add.image(W/2, H - 40, 'paddle')
     .setImmovable(true)
+    this.paddle.setTintFill(0x00F000)
+    this.paddle.setDisplaySize(100,12) 
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
 
     // Bricks
-    this.bricks = this.physics.add.staticGroup();
-    this.unbreakableBricks = this.physics.add.staticGroup();//tijolos inquebraveis
+   
+this.bricks = this.physics.add.staticGroup();
+this.unbreakableBricks = this.physics.add.staticGroup();
 
-    // quantidade de colunas e tal
-    const cols = 4, rows = 2;
+const bw = 41; // largura do bloco
+const bh = 22; // altura do bloco
+const marginX = 1;
+const marginY = 10;
 
-    // Tamanho desejado do brick
-    const bw = 61; // largura
-    const bh = 22; // altura
+const cols = 18; // largura total do mapa
+const rows = 12; // altura total
+const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
+const startY = 100;
 
-    const marginX = 10; // margem horizontal entre blocos
-    const marginY = 6;  // margem vertical entre blocos
+// Matriz do layout
+// N = nenhum bloco, Y = amarelo, P = roxo, G = verde
+const layout = [
+  "NNNNNNNNNNNNNNNNNN",
+  "NNNNNNNNNNNNNNNNNN",
+  "NNNNNNNNNNNNNNNNNN",
+  "NNNNNNNNNNNNNNNNNN",
+  "NNNNNNNNNNNNNNNNNN",
+  "NNNNNNVVVVVVNNNNNN",
+  "NNNNNNVVVVVVNNNNNN",
+  "NNNNNNNNNNNNNNNNNN",
 
-    const initialX = 300; // ponto inicial X da grade
-    const initialY = 255; // ponto inicial Y da grade
+];
 
-    const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
+for (let r = 0; r < layout.length; r++) {
+  for (let c = 0; c < layout[r].length; c++) {
+    const char = layout[r][c];
+    if (char === "N") continue;
 
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const brick = this.bricks.create(
-          startX + c * (bw + marginX),
-          100 + r * (bh + marginY),
-         'brick'
-        );
-        brick.displayWidth = bw;
-        brick.displayHeight = bh;
+    const x = startX + c * (bw + marginX);
+    const y = startY + r * (bh + marginY);
 
-        brick.refreshBody();
-      }
+    const brick = this.bricks.create(x, y, "brick");
+    brick.displayWidth = bw;
+    brick.displayHeight = bh;
+    brick.refreshBody();
+
+    // Aplica cor conforme letra
+    switch (char) {
+      case "V":
+        brick.setTintFill(0x00FF00); // verde
+        break;
+      case "B":
+        brick.setTintFill(0xFFF0FF); // branc
+        break;
+      case "R":
+        brick.setTintFill(0xFF00F0); // rosa
+        break;
+        case "I":
+        brick.setTintFill(0x0000FF); // indestrutivel
+        brick.setData("indestructible", true);
+        break
     }
 
-    this.specialBlocks = this.setSpecialBlocks(1); // O número determina a quantidade de blocos especiais
 
-      
-    //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
-    //    const brick = this.bricks.create(
-    //    startX + c * (bw + marginX),
-    //    100 + r * (bh + marginY),
-    //   'brick'
+    
+  }
+}   this.specialBlocks = this.setSpecialBlocks(3); // O número determina a quantidade de blocos especiais
     
 
     // Colliders
@@ -124,7 +148,7 @@ export default class MainScene extends Phaser.Scene {
         const b = ball as Phaser.Physics.Arcade.Image;
         const p = paddle as Phaser.Physics.Arcade.Image;
         const diff = b.x - p.x;
-        b.setVelocityX(15 * diff);
+        b.setVelocityX(10 * diff);
     });
 
     this.physics.add.collider(this.balls, this.bricks, (ball, brick: any) => {
@@ -172,7 +196,7 @@ export default class MainScene extends Phaser.Scene {
     const b = ball || this.ball;
     if (!b || !b.body) return;
 
-    const speed = 250;
+    const speed = 360;
 
     b.setVelocityX(0);
     b.setVelocityY(speed);
@@ -194,6 +218,8 @@ export default class MainScene extends Phaser.Scene {
 
       newBall.setCollideWorldBounds(true);
       newBall.setBounce(1);
+      newBall.setTintFill(0xFFFFFF);
+      newBall.setDisplaySize(15,15) 
       newBall.setVelocityY(-360);
       newBall.setVelocityX(Phaser.Math.Between(-360, 360));
 
@@ -231,7 +257,7 @@ export default class MainScene extends Phaser.Scene {
 
     selectedIndices.forEach((index) => {
     const specialBlock = breakableBricks[index];
-    specialBlock.setTint(0xff0000); // destaca em vermelho
+    specialBlock.setTintFill(0x00FF9F); // destaca em vermelho
     specialBlocks.push(specialBlock);
     });
 
@@ -239,7 +265,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   override update(_time: number, _delta: number): void {
-    // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
+    // Aqui você pode adicionar lógica por frame, modificadores temporários, etc.
 
     //reset
     const H = this.scale.height;

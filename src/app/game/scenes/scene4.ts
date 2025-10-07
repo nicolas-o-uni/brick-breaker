@@ -74,35 +74,38 @@ export default class MainScene extends Phaser.Scene {
     // Paddle
     this.paddle = this.physics.add.image(W/2, H - 40, 'paddle')
     .setImmovable(true)
+    .setTintFill(0xFF4C4C)
     .setDisplaySize(60, 10) // define tamanho real
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
 
     // Bricks
-    this.bricks = this.physics.add.staticGroup();
+// --- GRUPOS DE BLOCOS ---
+this.bricks = this.physics.add.staticGroup();
 this.unbreakableBricks = this.physics.add.staticGroup();
+
 
 const bw = 21; // largura do bloco
 const bh = 12; // altura do bloco
 const marginX = 1;
-const marginY = 10;
+const marginY = 4;
 
 const cols = 18; // largura total do mapa
 const rows = 12; // altura total
 const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
 const startY = 60;
 
-// Matriz do layout
-// N = nenhum bloco, Y = amarelo, P = roxo, G = verde
+
+// --- Layout do mapa ---
 const layout = [
-  "PNNNNNNNNNNNNNNNNN",
-  "PPNNNNNNNNIIIINNNN",
+  "NNNNNNNNNNNNNNNNNN",
+  "NNNNNNNNNNNNNNNNNN",
   "IIIIIIIINNNNNNNNNN",
-  "PPPNNGGGGGGGGGNPPP",
-  "PPNNNNGGGGGGGNNNPP",
-  "PNNNNNNGGGGGNNNNNP",
-  "NNNNNNGGGGGGGNNNNN",
-  "NNNNNGGGGGGGGGNNNN",
+  "PPPNNGGGGGGGGNNPPP",
+  "PPNNNGGGGGGGGNNNPP",
+  "PNNNNNGGGGGGNNNNNP",
+  "NNNNNGGGGGGGGNNNNN",
+  "NNNNNGGGGGGGGNNNNN",
   "NNNNNNNNNNNNNNNNNN",
   "NNNNNNNNNNNNNNNNNN",
   "IINNIIIINNIIINNNII",
@@ -121,27 +124,25 @@ for (let r = 0; r < layout.length; r++) {
     brick.displayHeight = bh;
     brick.refreshBody();
 
-    // Aplica cor conforme letra
+    // --- aplica as cores ---
     switch (char) {
       case "Y":
-        brick.setTint(0xffeb3b); // amarelo
+        brick.setTintFill(0xffeb3b); // amarelo
         break;
       case "P":
-        brick.setTint(0x9c27b0); // roxo
+        brick.setTintFill(0xFFFF00); // laranja
         break;
       case "G":
-        brick.setTint(0x4caf50); // verde
+        brick.setTintFill(0x00FFFF); // verde
         break;
-        case "I":
-        brick.setTint(0xff13f0); // indestrutivel
+      case "I":
+        brick.setTintFill(0xFF4C4C); // azul claro (indestrutível)
         brick.setData("indestructible", true);
-        break
+        break;
     }
-
-
-    
   }
-}   this.specialBlocks = this.setSpecialBlocks(3); // O número determina a quantidade de blocos especiais
+}
+     this.specialBlocks = this.setSpecialBlocks(3); // O número determina a quantidade de blocos especiais
     
           
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
@@ -264,7 +265,7 @@ for (let r = 0; r < layout.length; r++) {
 
         selectedIndices.forEach((index) => {
         const specialBlock = breakableBricks[index];
-        specialBlock.setTint(0xff0000); // destaca em vermelho
+        specialBlock.setTintFill(0x00FF9F); // destaca em vermelho
         specialBlocks.push(specialBlock);
         });
 
