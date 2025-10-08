@@ -6,9 +6,10 @@ export default class MainScene extends Phaser.Scene {
   balls!: Phaser.Physics.Arcade.Group;
   paddle!: Phaser.Physics.Arcade.Image;
   bricks!: Phaser.Physics.Arcade.StaticGroup;
+  unbreakableBricks!: Phaser.Physics.Arcade.StaticGroup;
   specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
     
-  constructor() { super({ key: 'map4' }); }
+  constructor() { super({ key: 'map5' }); }
 
   preload() {
     // caminhos relativos à root do app: src/assets/ -> 'assets/...'
@@ -56,13 +57,14 @@ export default class MainScene extends Phaser.Scene {
     // Paddle
     this.paddle = this.physics.add.image(W/2, H - 40, 'paddle')
     .setImmovable(true)
-    .setTintFill(0xFF4C4C)
     .setDisplaySize(60, 10) // define tamanho real
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
 
-    // Bricks
-    this.bricks = this.physics.add.staticGroup();   // --- GRUPOS DE BLOCOS ---
+    // Criação de mapa, realocação de blocos, destrutives quantos indestrutiveis 
+   
+    this.bricks = this.physics.add.staticGroup();
+    this.unbreakableBricks = this.physics.add.staticGroup();
 
     const bw = 21; // largura do bloco
     const bh = 12; // altura do bloco
@@ -74,21 +76,21 @@ export default class MainScene extends Phaser.Scene {
     const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
     const startY = 60;
 
-
     // Matriz do layout
     // N = nenhum bloco, Y = amarelo, P = roxo, G = verde
     const layout = [
-      "NNNNNNNNNNNNNNNNNN",
-      "NNNNNNNNNNNNNNNNNN",
-      "IIIIIIIINNNNNNNNNN",
-      "PPPNNGGGGGGGGNNPPP",
-      "PPNNNGGGGGGGGNNNPP",
-      "PNNNNNGGGGGGNNNNNP",
-      "NNNNNGGGGGGGGNNNNN",
-      "NNNNNGGGGGGGGNNNNN",
-      "NNNNNNNNNNNNNNNNNN",
-      "NNNNNNNNNNNNNNNNNN",
-      "IINNIIIINNIIINNNII",
+      "NNNNNNYYYYYNNNNNNN",
+      "PPPNYYYYYYYYYNNNNP",
+      "PPNYNNYYYYYNNYNNPP",
+      "NNNYNNYNNNYNNYNPPP",
+      "PPPPYYNNYNNYYIIIII",
+      "IIIIINNNNNNNNNPPPP",
+      "PPPNNNNNNNNNNNNPPP",
+      "PPNNNGGNNNGGNNNNPP",
+      "PNNNGGNNYNNGGNNNNP",
+      "NNNGGNNYYYNNGGNNNN",
+      "NNNNNNYYYYYNNNNNNN",
+      "IINNNIIIIIIINNNIII",
     ];
 
     for (let r = 0; r < layout.length; r++) {
@@ -104,25 +106,26 @@ export default class MainScene extends Phaser.Scene {
         brick.displayHeight = bh;
         brick.refreshBody();
 
-        // --- aplica as cores ---
+        // Aplica cor conforme letra
         switch (char) {
           case "Y":
-            brick.setTintFill(0xffeb3b); // amarelo
+            brick.setTintFill(0x00F000); // amarelo
             break;
           case "P":
-            brick.setTintFill(0xFFFF00); // laranja
+            brick.setTintFill(0x9c27b0); // roxo
             break;
           case "G":
-            brick.setTintFill(0x00FFFF); // verde
+            brick.setTintFill(0x00FF00); // verde
             break;
-          case "I":
-            brick.setTintFill(0xFF4C4C); // azul claro (indestrutível)
+            case "I":
+            brick.setTintFill(0xFF4C4C); // indestrutivel
             brick.setData("indestructible", true);
-            break;
+            break
         }
+        
       }
     }
-    this.specialBlocks = this.setSpecialBlocks(3); // O número determina a quantidade de blocos especiais
+    this.specialBlocks = this.setSpecialBlocks(5); // O número determina a quantidade de blocos especiais
     
           
     //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
@@ -167,6 +170,8 @@ export default class MainScene extends Phaser.Scene {
         }
     });
 
+    this.physics.add.collider(this.balls, this.unbreakableBricks);
+
     // Input: mover paddle com pointer/touch
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
         this.paddle.x = Phaser.Math.Clamp(p.x, this.paddle.displayWidth / 2, W - this.paddle.displayWidth / 2);
@@ -177,13 +182,13 @@ export default class MainScene extends Phaser.Scene {
 
     // Pausar com tecla P
     if (this.input.keyboard) {
-        this.input.keyboard.on('keydown-P', () => {
+      this.input.keyboard.on('keydown-P', () => {
         if (isGameStarted && !isPaused) pause(this.physics);
         else if (isPaused) resume(this.physics);
-        });
-        this.input.keyboard.on('keydown-E', () => {
+      });
+      this.input.keyboard.on('keydown-E', () => {
         CompleteMenu(this.physics, this);
-        });
+      });
     }
   }
 
@@ -215,6 +220,7 @@ export default class MainScene extends Phaser.Scene {
             newBall.setCollideWorldBounds(true);
             newBall.setDisplaySize(12, 12)
             newBall.setBounce(1);
+            newBall.setTintFill(0xFFFFFF);
             newBall.setVelocityY(-360);
             newBall.setVelocityX(Phaser.Math.Between(-360, 360));
 
@@ -252,7 +258,7 @@ export default class MainScene extends Phaser.Scene {
 
         selectedIndices.forEach((index) => {
         const specialBlock = breakableBricks[index];
-        specialBlock.setTintFill(0x00FF9F); // destaca em vermelho
+        specialBlock.setTintFill(0x00FFFF); // destaca em vermelho
         specialBlocks.push(specialBlock);
         });
 

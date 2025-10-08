@@ -3,108 +3,246 @@ import Phaser from 'phaser';
 let gameInstance: Phaser.Game | null = null;
 
 // Funções gerais
-export function startGame(scene: Phaser.Scene) {
-  scene.physics.resume();
+export let isGameStarted = false;
+export let isPaused = false;
+export let isInMenu = false;
+
+export function startLevel(balls: Phaser.Physics.Arcade.Group, launchBall: (ball: Phaser.Physics.Arcade.Image) => void, physics: Phaser.Physics.Arcade.ArcadePhysics, input: Phaser.Input.InputPlugin) {
+  isGameStarted = false;
+  isPaused = false;
+  isInMenu = false;
+
+  physics.pause();
+
+  input.once('pointerdown', () => {
+    if (!isGameStarted && !isPaused && !isInMenu) {
+      physics.resume();
+      balls.getChildren().forEach((b) => {
+        const ball = b as Phaser.Physics.Arcade.Image;
+        if (!ball || !ball.body) return;
+
+        if (ball.body.velocity.x === 0 && ball.body.velocity.y === 0) {
+          launchBall(ball);
+          isGameStarted = true;
+        }
+      });
+    }
+  });
+}
+
+export function pause(physics: Phaser.Physics.Arcade.ArcadePhysics) {
+  isPaused = true;
+  physics.pause();
+}
+
+export function resume(physics: Phaser.Physics.Arcade.ArcadePhysics) {
+  isPaused = false;
+  physics.resume();
 }
 
 export function restartLevel(scene: Phaser.Scene) {
   scene.scene.restart();
 }
 
-export function nextLevel(scene: Phaser.Scene, nextSceneKey: string) {
-  scene.scene.start(nextSceneKey);
+const validMaps = ['map1', 'map2', 'map3', 'map4', 'map5'];
+
+export function nextLevel(scene: Phaser.Scene, target?: number | string) {
+  const currentSceneKey = scene.scene.key;
+  let nextMap: string;
+
+  if (target) {
+    nextMap = `map${target}`;
+  } else {
+    const match = currentSceneKey.match(/^map(\d+)$/);
+    if (match) {
+      const nextNumber = parseInt(match[1]) + 1;
+      nextMap = `map${nextNumber}`;
+
+      if (!validMaps.includes(nextMap)) {
+        nextMap = 'principal';
+      }
+    } else {
+      nextMap = 'principal';
+    }
+  }
+
+  // dispara evento global pro Ionic
+  window.dispatchEvent(new CustomEvent('goToPage', { detail: nextMap }));
 }
 
-export function CompleteMenu(scene: Phaser.Scene) {
+export function CompleteMenu(physics: Phaser.Physics.Arcade.ArcadePhysics, scene: Phaser.Scene) {
+  isGameStarted = false;
+  isInMenu = true;
+  physics.pause();
+  
   const width = scene.cameras.main.width;
   const height = scene.cameras.main.height;
 
-  // Fundo semi-transparente (overlay)
-  const overlay = scene.add
-    .rectangle(0, 0, width, height, 0x000000, 0.5)
-    .setOrigin(0)
-    .setDepth(10); // fica na frente de tudo
+  function createButton(y: number, label: string, colorHex: string, callback: () => void) {
+    const btnWidth = 260;
+    const btnHeight = 55;
+    const radius = 25;
 
-  // Caixa do menu
+    const btnKey = `btn_${label}_${colorHex}`;
+    if (!scene.textures.exists(btnKey)) {
+      const rt = scene.textures.createCanvas(btnKey, btnWidth, btnHeight);
+      if (rt) {
+        const ctx = rt.getContext();
+        if (ctx) {
+          const grad = ctx.createLinearGradient(0, 0, 0, btnHeight);
+          grad.addColorStop(0, colorHex);
+          grad.addColorStop(1, colorHex);
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.moveTo(radius, 0);
+          ctx.lineTo(btnWidth - radius, 0);
+          ctx.quadraticCurveTo(btnWidth, 0, btnWidth, radius);
+          ctx.lineTo(btnWidth, btnHeight - radius);
+          ctx.quadraticCurveTo(btnWidth, btnHeight, btnWidth - radius, btnHeight);
+          ctx.lineTo(radius, btnHeight);
+          ctx.quadraticCurveTo(0, btnHeight, 0, btnHeight - radius);
+          ctx.lineTo(0, radius);
+          ctx.quadraticCurveTo(0, 0, radius, 0);
+          ctx.closePath();
+          ctx.fill();
+          rt.refresh();
+        }
+      }
+    }
+
+    const btn = scene.add
+      .image(width / 2, y, btnKey)
+      .setDisplaySize(btnWidth, btnHeight)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+
+    const text = scene.add
+      .text(width / 2, y, label, {
+        fontSize: "22px",
+        fontFamily: "Verdana",
+        color: "#ffffff",
+        shadow: { offsetX: 0, offsetY: 0, color: "#000", blur: 5, fill: true },
+      })
+      .setOrigin(0.5)
+      .setDepth(13);
+
+    // Hover  
+    btn.on("pointerover", () => {
+      scene.tweens.add({
+        targets: btn,
+        scaleX: 1.08,
+        scaleY: 1.08,
+        duration: 180,
+        ease: "Sine.easeOut",
+      });
+      btn.setTint(0xffffff);
+    });
+
+    btn.on("pointerout", () => {
+      scene.tweens.add({
+        targets: btn,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 180,
+        ease: "Sine.easeOut",
+      });
+      btn.clearTint();
+    });
+
+    btn.on("pointerdown", () => {
+      callback();
+    });
+
+    return { btn, text };
+  }
+
+  // Fundo 
+  const overlay = scene.add
+    .rectangle(0, 0, width, height, 0x000000, 0.75)
+    .setOrigin(0)
+    .setDepth(10)
+    .setAlpha(0);
+
+  scene.tweens.add({
+    targets: overlay,
+    alpha: 0.75,
+    duration: 300,
+    ease: "Sine.easeInOut",
+  });
+
+  // Caixa central 
+  const texKey = "menuBoxGradient";
+  if (!scene.textures.exists(texKey)) {
+    const rt = scene.textures.createCanvas(texKey, 460, 360);
+    if (rt) {
+      const ctx = rt.getContext();
+      if (ctx) {
+        const grad = ctx.createLinearGradient(0, 0, 0, 360);
+        grad.addColorStop(0, "#1a2a3a");
+        grad.addColorStop(1, "#293e52");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 460, 360);
+        rt.refresh();
+      }
+    }
+  }
+
   const box = scene.add
-    .rectangle(width / 2, height / 2, 400, 300, 0x222222, 0.9)
-    .setStrokeStyle(2, 0xffffff)
-    .setDepth(11);
+    .image(width / 2, height / 2, texKey)
+    .setDepth(11)
+    .setAlpha(0)
+    .setScale(0.8)
+    .setDisplaySize(460, 360);
+
+  const border = scene.add.graphics();
+  border.lineStyle(3, 0x00ffff, 1);
+  border.strokeRoundedRect(width / 2 - 230, height / 2 - 180, 460, 360, 25);
+  border.setDepth(12).setAlpha(0);
+
+  // Animação de aparição
+  scene.tweens.add({
+    targets: [box, border],
+    alpha: 1,
+    scale: 1,
+    duration: 400,
+    ease: "Back.Out",
+  });
 
   // Título
   const title = scene.add
-    .text(width / 2, height / 2 - 100, 'Fase Completa!', {
-      fontSize: '32px',
-      color: '#ffffff',
+    .text(width / 2, height / 2 - 120, "Você venceu!", {
+      fontSize: "40px",
+      fontFamily: "Arial Black",
+      color: "#ffffff",
+      stroke: "#3700ffff",
+      strokeThickness: 5,
+      shadow: {
+        offsetX: 0,
+        offsetY: 0,
+        color: "#3700ffff",
+        blur: 15,
+        fill: true,
+      },
     })
     .setOrigin(0.5)
-    .setDepth(11);
+    .setDepth(13);
 
   // Botão: Repetir fase
-  const btnRetry = scene.add
-    .text(width / 2, height / 2 - 30, ' Repetir Fase', {
-      fontSize: '24px',
-      color: '#00ff00',
-    })
-    .setOrigin(0.5)
-    .setInteractive()
-    .setDepth(11);
-
-  btnRetry.on('pointerdown', () => {
-    scene.scene.restart(); // Reinicia a cena atual
+  const btnRetry = createButton(height / 2 - 40, "Repetir Fase", "#FF9900", () => {
+    restartLevel(scene);
     cleanup();
   });
 
   // Botão: Continuar
-  const btnNext = scene.add
-    .text(width / 2, height / 2 + 20, ' Próxima Fase', {
-      fontSize: '24px',
-      color: '#00ffff',
-    })
-    .setOrigin(0.5)
-    .setInteractive()
-    .setDepth(11);
-
-  btnNext.on('pointerdown', () => {
-    const currentSceneKey = scene.scene.key;
-
-    // pega número da fase atual pelo nome da cena
-    const match = currentSceneKey.match(/^map(\d+)$/);
-
-    if (match) {
-      const currentMapNumber = parseInt(match[1]);
-      const nextMapNumber = currentMapNumber + 1;
-
-      // Salva a fase atual no registry
-      scene.registry.set('faseAtual', nextMapNumber);
-
-      // também pode salvar no localStorage (se quiser persistir entre sessões)
-      localStorage.setItem('faseAtual', nextMapNumber.toString());
-
-      const nextMapKey = `map${nextMapNumber}`;
-      if (scene.scene.get(nextMapKey)) {
-        scene.scene.start(nextMapKey);
-      } else {
-        scene.scene.start('MainMenu');
-      }
-    }
+  const btnNext = createButton(height / 2 + 30, "Próxima Fase", "#00BFFF", () => {
+    nextLevel(scene);
 
     cleanup();
   });
 
-
   // Botão: Menu Principal
-  const btnMenu = scene.add
-    .text(width / 2, height / 2 + 70, 'Menu Principal', {
-      fontSize: '24px',
-      color: '#ff6666',
-    })
-    .setOrigin(0.5)
-    .setInteractive()
-    .setDepth(11);
-
-  btnMenu.on('pointerdown', () => {
-    scene.scene.start('MainMenu'); // Troque pelo nome da cena de menu
+  const btnMenu = createButton(height / 2 + 100, "Menu Principal", "#FF4C4C", () => {
+    window.dispatchEvent(new CustomEvent('goToPage', { detail: 'principal' }));
     cleanup();
   });
 
@@ -112,11 +250,21 @@ export function CompleteMenu(scene: Phaser.Scene) {
   function cleanup() {
     overlay.destroy();
     box.destroy();
+    border.destroy();
     title.destroy();
-    btnRetry.destroy();
-    btnNext.destroy();
-    btnMenu.destroy();
+    [btnRetry, btnNext, btnMenu].forEach(({ btn, text }) => {
+      btn.destroy();
+      text.destroy();
+    }); 
   }
+}
+
+export function createGame(config: Phaser.Types.Core.GameConfig): Phaser.Game {
+  if (gameInstance) {
+    return gameInstance;
+  }
+  gameInstance = new Phaser.Game(config);
+  return gameInstance;
 }
 
 export function destroyGame() {

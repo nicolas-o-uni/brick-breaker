@@ -3,11 +3,11 @@ import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { createGame, destroyGame } from 'src/app/game/phaser-game';
-import Scene2 from 'src/app/game/scenes/scene2';
+import Scene5 from 'src/app/game/scenes/scene5';
 
 @Component({
   selector: 'app-game',
-  templateUrl: './map2.page.html',
+  templateUrl: './map5.page.html',
   imports: [IonicModule, CommonModule],
 })
 export class GamePage implements AfterViewInit, OnInit, OnDestroy {
@@ -23,7 +23,10 @@ export class GamePage implements AfterViewInit, OnInit, OnDestroy {
         default: 'arcade',
         arcade: { gravity: { x: 0, y: 0 }, debug: false }
       },
-      scene: [Scene2]
+      input: {
+        keyboard: true
+      },
+      scene: [Scene5]
     };
 
     createGame(config);
@@ -42,7 +45,6 @@ export class GamePage implements AfterViewInit, OnInit, OnDestroy {
 
   handlePageNavigation = (event: any) => {
     const targetPage = event.detail;
-    console.log('➡️ Navegando para:', targetPage);
     this.router.navigateByUrl(`/${targetPage}`, { replaceUrl: true, skipLocationChange: false })
     .then(() => {
       window.location.reload(); // força recarregar o componente inteiro

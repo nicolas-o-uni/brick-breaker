@@ -8,7 +8,7 @@ export default class MainScene extends Phaser.Scene {
   bricks!: Phaser.Physics.Arcade.StaticGroup;
   specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
 
-  constructor() { super({ key: 'map2' }); }
+  constructor() { super({ key: 'map1' }); }
 
   preload() {
     // caminhos relativos à root do app: src/assets/ -> 'assets/...'
@@ -17,11 +17,10 @@ export default class MainScene extends Phaser.Scene {
     this.load.image('brick', 'assets/images/Block Blue.png' );
   }
 
-
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
-    
+
     // Physics world
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
@@ -58,14 +57,14 @@ export default class MainScene extends Phaser.Scene {
     // Paddle
     this.paddle = this.physics.add.image(W/2, H - 40, 'paddle')
     .setImmovable(true)
-    this.paddle.setTintFill(0x00BFFF)
-    this.paddle.setDisplaySize(100,15) 
+    this.paddle.setTintFill(0x00F000)
+    this.paddle.setDisplaySize(100,12) 
     .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
 
     // Bricks
     this.bricks = this.physics.add.staticGroup();
-
+    
     const bw = 41; // largura do bloco
     const bh = 22; // altura do bloco
     const marginX = 1;
@@ -85,8 +84,8 @@ export default class MainScene extends Phaser.Scene {
       "NNNNNNNNNNNNNNNNNN",
       "NNNNNNNNNNNNNNNNNN",
       "NNNNNNVVVVVVNNNNNN",
-      "NNNNNVVVVVVVVNNNNN",
       "NNNNNNVVVVVVNNNNNN",
+      "NNNNNNNNNNNNNNNNNN",
 
     ];
 
@@ -106,7 +105,7 @@ export default class MainScene extends Phaser.Scene {
         // Aplica cor conforme letra
         switch (char) {
           case "V":
-            brick.setTintFill(0x00BFFF); // verde
+            brick.setTintFill(0x00FF00); // verde
             break;
           case "B":
             brick.setTintFill(0xFFF0FF); // branc
@@ -121,9 +120,9 @@ export default class MainScene extends Phaser.Scene {
         }
         
       }
-    }
-    this.specialBlocks = this.setSpecialBlocks(1); // O número determina a quantidade de blocos especiais
-
+    }   
+    this.specialBlocks = this.setSpecialBlocks(0); // O número determina a quantidade de blocos especiais
+    
 
     // Colliders
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {
@@ -253,7 +252,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   override update(_time: number, _delta: number): void {
-    // Aqui você pode adicionar lógica por frame, modificadores temporários, etc.
+    // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
 
     //reset
     const H = this.scale.height;
