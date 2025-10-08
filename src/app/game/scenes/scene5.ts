@@ -6,7 +6,6 @@ export default class MainScene extends Phaser.Scene {
   balls!: Phaser.Physics.Arcade.Group;
   paddle!: Phaser.Physics.Arcade.Image;
   bricks!: Phaser.Physics.Arcade.StaticGroup;
-  unbreakableBricks!: Phaser.Physics.Arcade.StaticGroup;
   specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
     
   constructor() { super({ key: 'map5' }); }

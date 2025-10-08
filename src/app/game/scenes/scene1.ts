@@ -17,11 +17,14 @@ export default class MainScene extends Phaser.Scene {
     this.load.image('brick', 'assets/images/Block Blue.png' );
   }
 
+
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
-
+    
     // Physics world
+    this.physics.world.drawDebug = false;
+    this.physics.world.debugGraphic.clear();
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
@@ -29,9 +32,6 @@ export default class MainScene extends Phaser.Scene {
     this.balls = this.physics.add.group({
       defaultKey: 'ball',
       maxSize: 10,
-      collideWorldBounds: true,
-      bounceX: 1,
-      bounceY: 1,
     });
 
     // Cria a bola inicial
@@ -252,7 +252,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   override update(_time: number, _delta: number): void {
-    // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
+    // Aqui você pode adicionar lógica por frame, modificadores temporários, etc.
 
     //reset
     const H = this.scale.height;

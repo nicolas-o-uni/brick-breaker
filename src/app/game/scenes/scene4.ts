@@ -22,6 +22,8 @@ export default class MainScene extends Phaser.Scene {
     const H = this.scale.height;
 
     // Physics world
+    this.physics.world.drawDebug = false;
+    this.physics.world.debugGraphic.clear();
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
