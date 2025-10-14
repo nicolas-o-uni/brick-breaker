@@ -1,0 +1,99 @@
+.principal-bg {
+  --background: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Título */
+.title {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #ffffffff;
+  text-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff, 0 0 40px #00f0ff;
+  margin-bottom: 40px;
+}
+
+/* Blocos */
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.row div {
+  width: 45px;
+  height: 25px;
+  border-radius: 6px;
+}
+
+/* Cores dos blocos */
+.red div {
+  background: #ff4c4c;
+  box-shadow: 0 0 10px #ff4c4c;
+}
+.orange div {
+  background: #ff9900;
+  box-shadow: 0 0 10px #ff9900;
+}
+.green div {
+  background: #00ff99;
+  box-shadow: 0 0 10px #00ff99;
+}
+.blue div {
+  background: #00ccff;
+  box-shadow: 0 0 10px #00ccff;
+}
+
+/* Botão play */
+.play-btn {
+  font-size: 1.5rem;
+  font-weight: bold;
+  --background: transparent;
+  --border-radius: 12px;
+  --border-color: #ff00ff;
+  --border-width: 2px;
+  --color: #ff00ff;
+  --padding-start: 40px;
+  --padding-end: 40px;
+  --padding-top: 15px;
+  --padding-bottom: 15px;
+  text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff;
+  margin-bottom: 50px;
+}
+
+/* Paddle */
+.paddle {
+  width: 120px;
+  height: 15px;
+  background: #ffff;
+  box-shadow: 0 0 15px #00ccff;
+  border-radius: 10px;
+  position: relative;
+  margin: 0 auto;
+}
+
+/* Bola */
+.ball {
+  width: 25px;
+  height: 25px;
+  background: #00ccff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #00ccff, 0 0 30px #00ccff;
+  position: absolute;
+  top: -30px;
+  left: calc(50% - 12.5px);
+}
+
+
+

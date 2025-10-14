@@ -1,0 +1,7 @@
+{
+  "name": "brick-breaker",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
