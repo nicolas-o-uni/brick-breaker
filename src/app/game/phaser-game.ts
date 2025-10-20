@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { GameProgressService, GameProgress } from './services/game-progress.service';
 import Scene1 from './scenes/scene1';
 import Scene2 from './scenes/scene2';
 import Scene3 from './scenes/scene3';
@@ -85,6 +84,7 @@ export function nextLevel(scene: Phaser.Scene, target?: number | string) {
   if (nextMap === 'principal') {
     window.dispatchEvent(new CustomEvent('goToPage', { detail: 'principal' }));
   } else {
+    scene.scene.stop(scene.scene.key);
     scene.scene.start(nextMap);
   }
 }
@@ -297,34 +297,6 @@ export function createGame(): Phaser.Game {
 
   gameInstance = new Phaser.Game(config);
   return gameInstance;
-}
-
-export abstract class BaseFase extends Phaser.Scene {
-  protected progress!: GameProgress;
-  startTime!: number;
-  protected faseName!: string;
-
-  async createBase(faseName: string) {
-    this.faseName = faseName;
-    this.progress = await GameProgressService.loadProgress();
-  }
-
-  async winLevel() {
-    const timeInSeconds = (Date.now() - this.startTime) / 1000;
-    console.log(timeInSeconds);
-
-    // Atualiza levelsCleared
-    if (!this.progress.levelsCleared.includes(this.faseName)) {
-      this.progress.levelsCleared.push(this.faseName);
-    }
-
-    // Atualiza bestTimes
-    if (!this.progress.bestTimes[this.faseName] || timeInSeconds < this.progress.bestTimes[this.faseName]) {
-      this.progress.bestTimes[this.faseName] = timeInSeconds;
-    }
-
-    await GameProgressService.saveProgress(this.progress);
-  }
 }
 
 export function destroyGame() {

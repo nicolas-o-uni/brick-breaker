@@ -1,21 +1,22 @@
-import { Storage } from '@capacitor/storage';
+import { Preferences } from '@capacitor/preferences';
 
 export class GameProgressService {
   static phases = ['map1', 'map2', 'map3', 'map4', 'map5'];
 
   static async saveProgress(data: GameProgress) {
-    await Storage.set({
+    await Preferences.set({
       key: 'game_progress',
       value: JSON.stringify(data)
     });
   }
 
   static async loadProgress(): Promise<GameProgress> {
-    const { value } = await Storage.get({ key: 'game_progress' });
+    const { value } = await Preferences.get({ key: 'game_progress' });
     return value ? JSON.parse(value) : this.defaultProgress();
   }
 
   static defaultProgress(): GameProgress {
+    // Inicializa bestTimes com todas as fases zeradas
     const bestTimes: Record<string, number> = {};
     this.phases.forEach(phase => {
       bestTimes[phase] = 0;

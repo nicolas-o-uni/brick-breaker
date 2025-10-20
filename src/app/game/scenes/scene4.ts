@@ -1,13 +1,9 @@
 import Phaser from 'phaser';
-import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from 'src/app/game/phaser-game';
+import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from '../phaser-game';
+import { BaseFase } from '../basefase'
 
-export default class MainScene extends Phaser.Scene {
-  ball!: Phaser.Physics.Arcade.Image;
-  balls!: Phaser.Physics.Arcade.Group;
-  paddle!: Phaser.Physics.Arcade.Image;
-  bricks!: Phaser.Physics.Arcade.StaticGroup;
-  specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
-    
+export default class map extends BaseFase {
+
   constructor() { super({ key: 'map4' }); }
 
   preload() {
@@ -15,6 +11,15 @@ export default class MainScene extends Phaser.Scene {
     this.load.image('ball', 'assets/images/Ball Gray.png');
     this.load.image('paddle', 'assets/images/Paddle Orange.png');
     this.load.image('brick', 'assets/images/Block Orange.png' );
+  }
+
+  async init() {
+    this.onProgressLoaded = () => {
+      if (this.progress.levelsCleared.includes('map4')) {
+        console.log("Fase já concluída!");
+      }
+    };
+    await this.createBase('map4');
   }
 
   create() {
@@ -161,6 +166,7 @@ export default class MainScene extends Phaser.Scene {
         if (breakableBricks.length === 0) {
             // menu ao completar fase
             CompleteMenu(this.physics, this);
+            this.finish();
         }
     });
 
@@ -180,20 +186,27 @@ export default class MainScene extends Phaser.Scene {
         });
         this.input.keyboard.on('keydown-E', () => {
         CompleteMenu(this.physics, this);
-        });
+        this.finish();
+      });
     }
   }
 
-    // Função de lançamento da bola
-    launchBall(ball?: Phaser.Physics.Arcade.Image) {
-        const b = ball || this.ball;
-        if (!b || !b.body) return;
+  async finish() {
+    await this.winLevel();
+  }
 
-        const speed = 460;
+  // Função de lançamento da bola
+  launchBall(ball?: Phaser.Physics.Arcade.Image) {
+    const b = ball || this.ball;
+    if (!b || !b.body) return;
 
-        b.setVelocityX(0);
-        b.setVelocityY(speed);
-    }
+    const speed = 460;
+
+    b.setVelocityX(0);
+    b.setVelocityY(speed);
+
+    this.startTime = Date.now();
+  }
 
     multiplyBalls() {
         const newBallsCount = this.balls.getChildren().length * 2;

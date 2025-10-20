@@ -1,13 +1,9 @@
 import Phaser from 'phaser';
 import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from '../phaser-game';
 import { BaseFase } from '../basefase'
+import { RankService } from "../services/onRank.service";
 
-export default class map1 extends Phaser.Scene {
-  ball!: Phaser.Physics.Arcade.Image;
-  balls!: Phaser.Physics.Arcade.Group;
-  paddle!: Phaser.Physics.Arcade.Image;
-  bricks!: Phaser.Physics.Arcade.StaticGroup;
-  specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
+export default class map extends BaseFase {
 
   constructor() { super({ key: 'map1' }); }
 
@@ -18,7 +14,16 @@ export default class map1 extends Phaser.Scene {
     this.load.image('brick', 'assets/images/Block Blue.png' );
   }
 
-  async create() {
+  async init() {
+    this.onProgressLoaded = () => {
+      if (this.progress.levelsCleared.includes('map1')) {
+        console.log("Fase já concluída!");
+      }
+    };
+    await this.createBase('map1');
+  }
+
+  create() {
     const W = this.scale.width;
     const H = this.scale.height;
 
@@ -154,6 +159,7 @@ export default class map1 extends Phaser.Scene {
         if (breakableBricks.length === 0) {
             // menu ao completar fase
             CompleteMenu(this.physics, this);
+            this.finish();
         }
     });
 
@@ -173,8 +179,23 @@ export default class map1 extends Phaser.Scene {
       });
       this.input.keyboard.on('keydown-E', () => {
         CompleteMenu(this.physics, this);
+        this.finish();
       });
     }
+  }
+
+  async finish() {
+    await this.winLevel();
+
+    const timeInSeconds = (Date.now() - this.startTime) / 1000;
+
+    // Envia para o ranking online
+    await RankService.submitScore({
+      name: prompt("Digite seu nome para o ranking:") || "Jogador",
+      level: this.faseName,
+      time: timeInSeconds,
+      timestamp: Date.now(),
+    });
   }
 
   // Função de lançamento da bola
@@ -186,6 +207,8 @@ export default class map1 extends Phaser.Scene {
 
     b.setVelocityX(0);
     b.setVelocityY(speed);
+
+    this.startTime = Date.now();
   }
 
   multiplyBalls() {

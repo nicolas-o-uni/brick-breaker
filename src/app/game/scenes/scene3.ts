@@ -1,12 +1,8 @@
 import Phaser from 'phaser';
-import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from 'src/app/game/phaser-game';
+import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from '../phaser-game';
+import { BaseFase } from '../basefase'
 
-export default class MainScene extends Phaser.Scene {
-  ball!: Phaser.Physics.Arcade.Image;
-  balls!: Phaser.Physics.Arcade.Group;
-  paddle!: Phaser.Physics.Arcade.Image;
-  bricks!: Phaser.Physics.Arcade.StaticGroup;
-  specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
+export default class map extends BaseFase {
 
   constructor() { super({ key: 'map3' }); }
 
@@ -15,6 +11,15 @@ export default class MainScene extends Phaser.Scene {
     this.load.image('ball', 'assets/images/Ball Red.png');
     this.load.image('paddle', 'assets/images/Paddle Blue.png');
     this.load.image('brick', 'assets/images/Block Blue.png' );
+  }
+
+  async init() {
+    this.onProgressLoaded = () => {
+      if (this.progress.levelsCleared.includes('map3')) {
+        console.log("Fase já concluída!");
+      }
+    };
+    await this.createBase('map3');
   }
 
   create() {
@@ -152,6 +157,7 @@ export default class MainScene extends Phaser.Scene {
         if (breakableBricks.length === 0) {
             // menu ao completar fase
             CompleteMenu(this.physics, this);
+            this.finish();
         }
     });
 
@@ -171,8 +177,13 @@ export default class MainScene extends Phaser.Scene {
       });
       this.input.keyboard.on('keydown-E', () => {
         CompleteMenu(this.physics, this);
+        this.finish();
       });
     }
+  }
+
+  async finish() {
+    await this.winLevel();
   }
 
   // Função de lançamento da bola
@@ -184,6 +195,8 @@ export default class MainScene extends Phaser.Scene {
 
     b.setVelocityX(0);
     b.setVelocityY(speed);
+
+    this.startTime = Date.now();
   }
 
   multiplyBalls() {

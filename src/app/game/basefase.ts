@@ -3,12 +3,25 @@ import { GameProgressService, GameProgress } from './services/game-progress.serv
 
 export abstract class BaseFase extends Phaser.Scene {
   protected progress!: GameProgress;
-  startTime!: number;
   protected faseName!: string;
+  onProgressLoaded?: () => void;
+  startTime!: number;
+  ball!: Phaser.Physics.Arcade.Image;
+  balls!: Phaser.Physics.Arcade.Group;
+  paddle!: Phaser.Physics.Arcade.Image;
+  bricks!: Phaser.Physics.Arcade.StaticGroup;
+  specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
 
   async createBase(faseName: string) {
     this.faseName = faseName;
     this.progress = await GameProgressService.loadProgress();
+    console.log('✅ Base criada para', faseName);
+    console.log('Progresso carregado:', this.progress);
+
+    // Novo: callback opcional
+    if (this.onProgressLoaded) {
+      this.onProgressLoaded();
+    }
   }
 
   async winLevel() {
