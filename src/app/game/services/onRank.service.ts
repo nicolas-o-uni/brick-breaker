@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { getFirestore, collection, doc, setDoc, serverTimestamp, getDocs, query, orderBy, limit } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -18,39 +18,29 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Estrutura do dado
-export interface RankEntry {
-  name: string;
-  level: string;
-  time: number; // segundos
-  timestamp: number;
-}
-
 export class RankService {
 
-  static async submitScore(entry: RankEntry) {
+  static async saveScore(mapId: string, name: string, time: number) {
     try {
-      await addDoc(collection(db, "ranks"), entry);
-      console.log("🏆 Score salvo com sucesso!");
+      const playerDoc = doc(db, "ranks", mapId, "scores", name); // 🔹 nome do jogador = ID do doc
+      await setDoc(playerDoc, {
+        name,
+        time,
+        date: serverTimestamp(),
+      });
+      console.log(`✅ Score salvo para ${name}!`);
     } catch (error) {
-      console.error("Erro ao salvar score:", error);
+      console.error("❌ Erro ao salvar score:", error);
     }
   }
 
-  static async getTopScores(level: string, top: number = 10): Promise<RankEntry[]> {
-    try {
-      const q = query(
-        collection(db, "ranks"),
-        orderBy("time", "asc"),
-        limit(top)
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs
-        .map(doc => doc.data() as RankEntry)
-        .filter(entry => entry.level === level);
-    } catch (error) {
-      console.error("Erro ao buscar rank:", error);
-      return [];
-    }
+  static async getTopScores(mapId: string) {
+    const scoresRef = collection(db, "ranks", mapId, "scores");
+    const q = query(scoresRef, orderBy("score", "asc"), limit(10)); // menor tempo = melhor
+    const snapshot = await getDocs(q);
+
+    const results = snapshot.docs.map(doc => doc.data());
+    console.log("🏆 Ranking:", results);
+    return results;
   }
 }

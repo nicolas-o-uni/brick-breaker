@@ -190,12 +190,8 @@ export default class map extends BaseFase {
     const timeInSeconds = (Date.now() - this.startTime) / 1000;
 
     // Envia para o ranking online
-    await RankService.submitScore({
-      name: prompt("Digite seu nome para o ranking:") || "Jogador",
-      level: this.faseName,
-      time: timeInSeconds,
-      timestamp: Date.now(),
-    });
+    const playerName = prompt("Digite seu nome para o ranking:") || "Jogador";
+    await RankService.saveScore(this.faseName, playerName, timeInSeconds);
   }
 
   // Função de lançamento da bola
