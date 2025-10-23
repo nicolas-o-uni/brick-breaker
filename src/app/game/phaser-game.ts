@@ -4,6 +4,7 @@ import Scene2 from './scenes/scene2';
 import Scene3 from './scenes/scene3';
 import Scene4 from './scenes/scene4';
 import Scene5 from './scenes/scene5';
+import rank from './scenes/rank';
 
 let gameInstance: Phaser.Game | null = null;
 
@@ -21,6 +22,7 @@ let gameInstance: Phaser.Game | null = null;
 export let isGameStarted = false;
 export let isPaused = false;
 export let isInMenu = false;
+export let RankRun = false;
 
 export function startLevel(balls: Phaser.Physics.Arcade.Group, launchBall: (ball: Phaser.Physics.Arcade.Image) => void, physics: Phaser.Physics.Arcade.ArcadePhysics, input: Phaser.Input.InputPlugin) {
   isGameStarted = false;
@@ -59,34 +61,84 @@ export function restartLevel(scene: Phaser.Scene) {
   scene.scene.restart();
 }
 
-const validMaps = ['map1', 'map2', 'map3', 'map4', 'map5'];
-
 export function nextLevel(scene: Phaser.Scene, target?: number | string) {
   const currentSceneKey = scene.scene.key;
   let nextMap: string;
 
+  const validMaps = ['map1', 'map2', 'map3', 'map4', 'map5'];
+  const match = currentSceneKey.match(/^map(\d+)$/);
+
   if (target) {
     nextMap = `map${target}`;
+  } else if (match) {
+    const nextNumber = parseInt(match[1]) + 1;
+    nextMap = `map${nextNumber}`;
   } else {
-    const match = currentSceneKey.match(/^map(\d+)$/);
-    if (match) {
-      const nextNumber = parseInt(match[1]) + 1;
-      nextMap = `map${nextNumber}`;
-
-      if (!validMaps.includes(nextMap)) {
-        nextMap = 'principal';
-      }
-    } else {
-      nextMap = 'principal';
-    }
+    nextMap = 'principal';
   }
 
-  if (nextMap === 'principal') {
-    window.dispatchEvent(new CustomEvent('goToPage', { detail: 'principal' }));
+  // Normal flow (non-speedrun)
+  if (!isRankRunEnabled()) {
+    if (!validMaps.includes(nextMap)) nextMap = 'principal';
+    if (nextMap === 'principal') {
+      window.dispatchEvent(new CustomEvent('goToPage', { detail: 'principal' }));
+    } else {
+      scene.scene.stop(currentSceneKey);
+      scene.scene.start(nextMap);
+    }
+    return;
+  }
+
+  // Speedrun flow
+  if (!validMaps.includes(nextMap)) {
+    // Finalizou todas as fases → cena de resumo (a ser criada)
+    scene.scene.stop(currentSceneKey);
+    scene.scene.start('rank');
   } else {
-    scene.scene.stop(scene.scene.key);
+    RankRunData.currentIndex++;
+    scene.scene.stop(currentSceneKey);
     scene.scene.start(nextMap);
   }
+}
+
+// Estado global do RankRun (não reatribua via import; use as funções abaixo)
+export const RankRunState = {
+  enabled: false
+};
+
+// Dados coletados durante o RankRun
+export const RankRunData: {
+  currentIndex: number;
+  totalTime: number;
+  mapTimes: Record<string, number>;
+} = {
+  currentIndex: 1,
+  totalTime: 0,
+  mapTimes: {}
+};
+
+// Funções para controlar RankRun (use estas de outros módulos)
+export function startRankRun() {
+  RankRunState.enabled = true;
+  RankRunData.currentIndex = 1;
+  RankRunData.totalTime = 0;
+  RankRunData.mapTimes = {};
+}
+
+export function stopRankRun() {
+  RankRunState.enabled = false;
+}
+
+// consulta
+export function isRankRunEnabled() {
+  return RankRunState.enabled;
+}
+
+export function resetRankRun() {
+  RankRunState.enabled = false;
+  RankRunData.currentIndex = 1;
+  RankRunData.totalTime = 0;
+  RankRunData.mapTimes = {};
 }
 
 export function CompleteMenu(physics: Phaser.Physics.Arcade.ArcadePhysics, scene: Phaser.Scene) {
@@ -292,7 +344,7 @@ export function createGame(): Phaser.Game {
       default: 'arcade',
       arcade: { gravity: { x: 0, y: 0 }, debug: false }
     },
-    scene: [Scene1, Scene2, Scene3, Scene4, Scene5]
+    scene: [Scene1, Scene2, Scene3, Scene4, Scene5, rank]
   };
 
   gameInstance = new Phaser.Game(config);

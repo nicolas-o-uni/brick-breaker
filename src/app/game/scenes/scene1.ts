@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from '../phaser-game';
-import { BaseFase } from '../basefase'
+import { BaseFase } from '../basefase';
 import { RankService } from "../services/onRank.service";
+import { isRankRunEnabled, RankRunData, nextLevel } from '../phaser-game';
 
 export default class map extends BaseFase {
 
@@ -188,10 +189,17 @@ export default class map extends BaseFase {
     await this.winLevel();
 
     const timeInSeconds = (Date.now() - this.startTime) / 1000;
+    const mapName = this.faseName;
 
-    // Envia para o ranking online
-    const playerName = prompt("Digite seu nome para o ranking:") || "Jogador";
-    await RankService.saveScore(this.faseName, playerName, timeInSeconds);
+    // Se estiver em RankRun, acumula e vai automaticamente para a próxima cena
+    if (isRankRunEnabled()) {
+      RankRunData.totalTime += timeInSeconds;
+      RankRunData.mapTimes[mapName] = timeInSeconds;
+
+      // NÃO salva imediatamente no Firestore — salvaremos no resumo (opcional prompt)
+      nextLevel(this);
+      return;
+    }
   }
 
   // Função de lançamento da bola
