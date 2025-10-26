@@ -5,6 +5,7 @@ import Scene3 from './scenes/scene3';
 import Scene4 from './scenes/scene4';
 import Scene5 from './scenes/scene5';
 import rank from './scenes/rank';
+import rankPrompt from './scenes/rankPrompt';
 
 let gameInstance: Phaser.Game | null = null;
 
@@ -103,7 +104,8 @@ export function nextLevel(scene: Phaser.Scene, target?: number | string) {
 
 // Estado global do RankRun (não reatribua via import; use as funções abaixo)
 export const RankRunState = {
-  enabled: false
+  enabled: false,
+  name: ""
 };
 
 // Dados coletados durante o RankRun
@@ -117,12 +119,10 @@ export const RankRunData: {
   mapTimes: {}
 };
 
-// Funções para controlar RankRun (use estas de outros módulos)
-export function startRankRun() {
-  RankRunState.enabled = true;
-  RankRunData.currentIndex = 1;
-  RankRunData.totalTime = 0;
-  RankRunData.mapTimes = {};
+// Funções para controlar RankRun
+export async function startRankRun() {
+  RankRunState.enabled = false; // garante reset
+  window.dispatchEvent(new CustomEvent('startRankPrompt'));
 }
 
 export function stopRankRun() {
@@ -136,6 +136,7 @@ export function isRankRunEnabled() {
 
 export function resetRankRun() {
   RankRunState.enabled = false;
+  RankRunState.name = "";
   RankRunData.currentIndex = 1;
   RankRunData.totalTime = 0;
   RankRunData.mapTimes = {};
@@ -344,7 +345,7 @@ export function createGame(): Phaser.Game {
       default: 'arcade',
       arcade: { gravity: { x: 0, y: 0 }, debug: false }
     },
-    scene: [Scene1, Scene2, Scene3, Scene4, Scene5, rank]
+    scene: [Scene1, Scene2, Scene3, Scene4, Scene5, rank, rankPrompt]
   };
 
   gameInstance = new Phaser.Game(config);

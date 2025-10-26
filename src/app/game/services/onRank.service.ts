@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, setDoc, serverTimestamp, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, getDocs, query, orderBy, limit } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -20,15 +20,34 @@ const db = getFirestore(app);
 
 export class RankService {
 
-  static async saveScore(mapId: string, name: string, time: number) {
+  static async saveScore(mapId: string, playerName: string, newTime: number) {
     try {
-      const playerDoc = doc(db, "ranks", mapId, "scores", name); // 🔹 nome do jogador = ID do doc
-      await setDoc(playerDoc, {
-        name,
-        time,
-        date: serverTimestamp(),
-      });
-      console.log(`✅ Score salvo para ${name}!`);
+      const docRef = doc(db, "ranks", mapId, "scores", playerName);
+      const snapshot = await getDoc(docRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.data() as { time: number };
+        const oldTime = data.time;
+        
+        if (newTime < oldTime) {
+          await setDoc(docRef, {
+            name: playerName,
+            time: newTime,
+            date: serverTimestamp()
+          });
+          console.log(`🏁 Novo recorde em ${mapId}: ${newTime}s (melhor que ${oldTime}s)`);
+        } else {
+          console.log(`⚪ Tempo ${newTime}s não superou o recorde atual (${oldTime}s).`);
+        }
+      } else {
+        // ainda não há registro → cria
+        await setDoc(docRef, {
+          name: playerName,
+          time: newTime,
+          date: serverTimestamp()
+        });
+        console.log(`✅ Primeiro tempo salvo em ${mapId}: ${newTime}s`);
+      }
     } catch (error) {
       console.error("❌ Erro ao salvar score:", error);
     }

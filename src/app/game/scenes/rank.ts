@@ -1,6 +1,6 @@
 // rankedSummary.ts
 import Phaser from 'phaser';
-import { RankRunData, resetRankRun } from '../phaser-game';
+import { RankRunData, RankRunState, resetRankRun } from '../phaser-game';
 import { RankService } from "../services/onRank.service";
 
 export default class RankedSummary extends Phaser.Scene {
@@ -25,24 +25,13 @@ export default class RankedSummary extends Phaser.Scene {
 
     this.add.text(W/2, y + 10, `Tempo total: ${RankRunData.totalTime.toFixed(2)}s`, { fontSize: '22px', color: '#0f0' }).setOrigin(0.5);
 
-    // Pergunta opcional para salvar no Firebase (só se o jogador quiser)
-    const save = confirm("Deseja salvar seus tempos no ranking online?");
-    if (save) {
-      const playerName = prompt("Digite seu nome para o ranking:") || "Jogador";
+    // Salva tempo total como um registro específico (ex: 'speedrun_total')
+    try {
+      await RankService.saveScore('speedrun_total', RankRunState.name, RankRunData.totalTime);
 
-      // Salva tempo total como um registro específico (ex: 'speedrun_total')
-      try {
-        await RankService.saveScore('speedrun_total', playerName, RankRunData.totalTime);
-
-        // além disso, salve cada mapa separadamente como no saveScore normal
-        for (const [map, time] of Object.entries(RankRunData.mapTimes)) {
-          await RankService.saveScore(map, playerName, time);
-        }
-
-        console.log('✅ Speedrun salva com sucesso!');
-      } catch (err) {
-        console.error('Erro ao salvar speedrun:', err);
-      }
+      console.log('✅ Speedrun salva com sucesso!');
+    } catch (err) {
+      console.error('Erro ao salvar speedrun:', err);
     }
 
     // botão de voltar ao menu

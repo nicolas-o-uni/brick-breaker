@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { IonContent, IonButton } from '@ionic/angular/standalone';
-import { startRankRun, resetRankRun } from '../../game/phaser-game';
+import { createGame, startRankRun, resetRankRun } from '../../game/phaser-game';
 
 @Component({
   selector: 'app-principal',
@@ -11,8 +11,25 @@ import { startRankRun, resetRankRun } from '../../game/phaser-game';
   standalone: true,
   imports: [IonContent, IonButton, CommonModule],
 })
-export class PrincipalPage {
+export class PrincipalPage implements OnInit, OnDestroy {
+  private listener!: () => void;
+
   constructor(private router: Router) {}
+
+  ngOnInit() {
+    this.listener = () => {
+      this.router.navigate(['/maps']); // abre página do jogo
+      setTimeout(() => {
+        const game = createGame();
+        game.scene.start('rankPrompt');
+      }, 100);
+    };
+    window.addEventListener('startRankPrompt', this.listener);
+  }
+
+  ngOnDestroy() {
+    window.removeEventListener('startRankPrompt', this.listener);
+  }
 
   goToMap1() {
     resetRankRun(); // garante estado limpo
@@ -21,7 +38,6 @@ export class PrincipalPage {
 
   goToSpeedrun() {
     startRankRun();
-    this.router.navigate(['/maps']); // irá iniciar no map1
   }
 }
 

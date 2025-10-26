@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from '../phaser-game';
 import { BaseFase } from '../basefase';
 import { RankService } from "../services/onRank.service";
-import { isRankRunEnabled, RankRunData, nextLevel } from '../phaser-game';
+import { isRankRunEnabled, RankRunData, RankRunState, nextLevel } from '../phaser-game';
 
 export default class map extends BaseFase {
 
@@ -196,7 +196,9 @@ export default class map extends BaseFase {
       RankRunData.totalTime += timeInSeconds;
       RankRunData.mapTimes[mapName] = timeInSeconds;
 
-      // NÃO salva imediatamente no Firestore — salvaremos no resumo (opcional prompt)
+      // salva recorde individual se for melhor
+      await RankService.saveScore(this.faseName, RankRunState.name, timeInSeconds);
+
       nextLevel(this);
       return;
     }
