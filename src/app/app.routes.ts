@@ -14,5 +14,10 @@ export const routes: Routes = [
   {
   path: 'maps',
   loadComponent: () => import('./pages/maps/maps.page').then((m) => m.GamePage),
+  },
+  {
+    path: 'all-rank',
+    loadComponent: () => import('./pages/all-rank/all-rank.page').then( m => m.AllRankPage)
   }
+
 ];

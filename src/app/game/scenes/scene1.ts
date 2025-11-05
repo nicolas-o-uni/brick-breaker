@@ -32,6 +32,14 @@ export default class map extends BaseFase {
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
+    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+      const width = gameSize.width;
+      const height = gameSize.height;
+
+      // Atualiza os limites físicos pra acompanhar a nova tela
+      this.physics.world.setBounds(0, 0, width, height);
+    });
+
     // Cria grupo de bolas antes de criar a primeira bola
     this.balls = this.physics.add.group({
       defaultKey: 'ball',

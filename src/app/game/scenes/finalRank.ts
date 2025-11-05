@@ -5,7 +5,7 @@ import { RankService } from "../services/onRank.service";
 
 export default class RankedSummary extends Phaser.Scene {
   constructor() {
-    super({ key: 'rank' });
+    super({ key: 'finalRank' });
   }
 
   async create() {
@@ -27,7 +27,7 @@ export default class RankedSummary extends Phaser.Scene {
 
     // Salva tempo total como um registro específico (ex: 'speedrun_total')
     try {
-      await RankService.saveScore('speedrun_total', RankRunState.name, RankRunData.totalTime);
+      await RankService.saveScore('Tempo total', RankRunState.name, RankRunData.totalTime);
 
       console.log('✅ Speedrun salva com sucesso!');
     } catch (err) {

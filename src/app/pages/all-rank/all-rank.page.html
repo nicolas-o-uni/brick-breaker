@@ -1,0 +1,58 @@
+<ion-header translucent="true">
+  <ion-toolbar class="toolbar">
+    <ion-title class="title">🏆 RANKING GERAL</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="rank-content">
+
+  <div class="filter-buttons">
+    <ion-button fill="clear" (click)="changeRankType('world')">🌐 Mundial</ion-button>
+    <ion-button fill="clear" (click)="changeRankType('country')">🇧🇷 Nacional</ion-button>
+    <ion-button fill="clear" (click)="changeRankType('state')">📍 Regional</ion-button>
+  </div>
+
+  <!-- Mensagem exibida se a localização estiver desativada -->
+  <div *ngIf="showLocationMessage" class="location-warning" style="text-align:center; margin-top: 40vh;">
+    <h3 style="color:#ffcc00; text-shadow: 0 0 10px #ffcc00;">
+      ⚠️ Ative sua localização para visualizar o ranking 
+      {{ rankType === 'country' ? 'nacional' : 'regional' }}.
+    </h3>
+
+    <ion-button 
+      fill="transparent" 
+      (click)="retryLocation()" 
+      style="margin-top:16px;">
+      🔄 Tentar novamente
+    </ion-button>
+  </div>
+
+  <!-- Indicador de carregamento -->
+  <ion-spinner 
+    *ngIf="isLoading" 
+    name="crescent" 
+    style="display:block; margin: 30vh auto; color:#00ffff;">
+  </ion-spinner>
+
+  <div class="rank-output">
+    <ion-card *ngFor="let map of rankData">
+      <ion-card-header>
+        <ion-card-title>{{ map.mapName }}</ion-card-title>
+        <ion-card-subtitle>🏅 Melhor tempo: {{ map.best?.name }} ({{ map.best?.time }}s)</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let s of map.scores; index as i">
+            <ion-label>
+              <strong>{{ i + 1 }}.</strong> {{ s.name }} — {{ s.time }}s<br />
+              <small>{{ s.country }}<span *ngIf="s.state">, {{ s.state }}</span></small>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <ion-button expand="block" color="danger" class="back-btn" (click)="goBack()">⬅️ Voltar</ion-button>
+
+</ion-content>

@@ -4,7 +4,7 @@ import Scene2 from './scenes/scene2';
 import Scene3 from './scenes/scene3';
 import Scene4 from './scenes/scene4';
 import Scene5 from './scenes/scene5';
-import rank from './scenes/rank';
+import finalRank from './scenes/finalRank';
 import rankPrompt from './scenes/rankPrompt';
 
 let gameInstance: Phaser.Game | null = null;
@@ -94,7 +94,7 @@ export function nextLevel(scene: Phaser.Scene, target?: number | string) {
   if (!validMaps.includes(nextMap)) {
     // Finalizou todas as fases → cena de resumo (a ser criada)
     scene.scene.stop(currentSceneKey);
-    scene.scene.start('rank');
+    scene.scene.start('finalRank');
   } else {
     RankRunData.currentIndex++;
     scene.scene.stop(currentSceneKey);
@@ -345,7 +345,7 @@ export function createGame(): Phaser.Game {
       default: 'arcade',
       arcade: { gravity: { x: 0, y: 0 }, debug: false }
     },
-    scene: [Scene1, Scene2, Scene3, Scene4, Scene5, rank, rankPrompt]
+    scene: [Scene1, Scene2, Scene3, Scene4, Scene5, finalRank, rankPrompt]
   };
 
   gameInstance = new Phaser.Game(config);
