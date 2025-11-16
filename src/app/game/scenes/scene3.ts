@@ -17,6 +17,7 @@ export default class MainScene extends Phaser.Scene {
   bricks!: Phaser.Physics.Arcade.StaticGroup;
   multiplyBallBlocks!: Phaser.Physics.Arcade.Image[];
   invertScreenBlocks!: Phaser.Physics.Arcade.Image[];
+  speedBoostBlocks!: Phaser.Physics.Arcade.Image[];
   isScreenInverted: boolean = false;
 
   constructor() {
@@ -147,6 +148,11 @@ export default class MainScene extends Phaser.Scene {
         this.invertScreenBlocks.includes(brick as Phaser.Physics.Arcade.Image)
       ) {
         this.invertScreen();
+      } else if (
+        this.speedBoostBlocks &&
+        this.speedBoostBlocks.includes(brick as Phaser.Physics.Arcade.Image)
+      ) {
+        this.speedBoost();
       }
 
       if (!brick.getData('indestructible')) {
@@ -217,7 +223,7 @@ export default class MainScene extends Phaser.Scene {
 
       newBall.setCollideWorldBounds(true);
       newBall.setBounce(1);
-      newBall.setTintFill(0x00ffff);
+      newBall.setTintFill(0xffffff);
       newBall.setVelocityY(-360);
       newBall.setVelocityX(Phaser.Math.Between(-360, 360));
 
@@ -240,6 +246,11 @@ export default class MainScene extends Phaser.Scene {
           this.invertScreenBlocks.includes(brick as Phaser.Physics.Arcade.Image)
         ) {
           this.invertScreen();
+        } else if (
+          this.speedBoostBlocks &&
+          this.speedBoostBlocks.includes(brick as Phaser.Physics.Arcade.Image)
+        ) {
+          this.speedBoost();
         }
 
         if (!brick.getData('indestructible')) {
@@ -273,7 +284,36 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
-  setSpecialBlocks(totalSpecialBlocks = 4): void {
+  speedBoost() {
+    this.balls.getChildren().forEach((b) => {
+      const ball = b as Phaser.Physics.Arcade.Image;
+      if (!ball || !ball.body) return;
+
+      const body = ball.body as Phaser.Physics.Arcade.Body;
+
+      // Aumenta a velocidade em 50%
+      const currentVelX = body.velocity.x;
+      const currentVelY = body.velocity.y;
+
+      ball.setVelocityX(currentVelX * 1.5);
+      ball.setVelocityY(currentVelY * 1.5);
+
+      // Efeito visual: deixa a bola amarela temporariamente
+      ball.setTintFill(0xffff00);
+
+      // Restaura a velocidade e cor após 5 segundos
+      this.time.delayedCall(5000, () => {
+        if (ball && ball.body) {
+          const body = ball.body as Phaser.Physics.Arcade.Body;
+          ball.setVelocityX(body.velocity.x / 1.5);
+          ball.setVelocityY(body.velocity.y / 1.5);
+          ball.setTintFill(0xffffff);
+        }
+      });
+    });
+  }
+
+  setSpecialBlocks(totalSpecialBlocks = 6): void {
     const allBricks =
       this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
 
@@ -286,12 +326,14 @@ export default class MainScene extends Phaser.Scene {
       return;
     }
 
-    // Divide os blocos especiais entre os dois tipos
-    const multiplyCount = Math.floor(totalSpecialBlocks / 2);
-    const invertCount = totalSpecialBlocks - multiplyCount;
+    // Divide os blocos especiais entre os três tipos
+    const multiplyCount = Math.floor(totalSpecialBlocks / 3);
+    const invertCount = Math.floor(totalSpecialBlocks / 3);
+    const speedBoostCount = Math.floor(totalSpecialBlocks / 3);
 
     this.multiplyBallBlocks = [];
     this.invertScreenBlocks = [];
+    this.speedBoostBlocks = [];
 
     const selectedIndices = new Set<number>();
 
@@ -306,14 +348,25 @@ export default class MainScene extends Phaser.Scene {
       }
     }
 
-    // Seleciona blocos para inverter tela (Cinza - 0x1A1A1A)
+    // Seleciona blocos para inverter tela (Cinza - 0xAA9797)
     while (this.invertScreenBlocks.length < invertCount) {
       const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
       if (!selectedIndices.has(randomIndex)) {
         selectedIndices.add(randomIndex);
         const specialBlock = breakableBricks[randomIndex];
-        specialBlock.setTintFill(0xaa9797); // Cinza (levemente cinza para visibilidade)
+        specialBlock.setTintFill(0xaa9797); // Cinza
         this.invertScreenBlocks.push(specialBlock);
+      }
+    }
+
+    // Seleciona blocos para acelerar bolas (AMARELO - 0xFFFF00)
+    while (this.speedBoostBlocks.length < speedBoostCount) {
+      const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
+      if (!selectedIndices.has(randomIndex)) {
+        selectedIndices.add(randomIndex);
+        const specialBlock = breakableBricks[randomIndex];
+        specialBlock.setTintFill(0xffff00); // Amarelo
+        this.speedBoostBlocks.push(specialBlock);
       }
     }
   }
