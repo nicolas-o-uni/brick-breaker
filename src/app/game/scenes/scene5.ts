@@ -35,7 +35,7 @@ export default class map extends BaseFase {
     // Cria grupo de bolas antes de criar a primeira bola
     this.balls = this.physics.add.group({
       defaultKey: 'ball',
-      maxSize: 100,
+      maxSize: 1000,
     });
 
     // Cria a bola inicial
@@ -127,50 +127,53 @@ export default class map extends BaseFase {
         
       }
     }
-    this.specialBlocks = this.setSpecialBlocks(5); // O número determina a quantidade de blocos especiais
-    
-          
-    //  --CÓDIGO PRA CENTRALIZAR OS BLOCOS--
-    //    const brick = this.bricks.create(
-    //    startX + c * (bw + marginX),
-    //    100 + r * (bh + marginY),
-    //   'brick'
-    
-
+    this.setSpecialBlocks();
+            
+            
     // Colliders
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {
-        const b = ball as Phaser.Physics.Arcade.Image;
-        const p = paddle as Phaser.Physics.Arcade.Image;
-        const diff = b.x - p.x;
-        b.setVelocityX(10 * diff);
+      const b = ball as Phaser.Physics.Arcade.Image;
+      const p = paddle as Phaser.Physics.Arcade.Image;
+      const diff = b.x - p.x;
+      b.setVelocityX(10 * diff);
     });
 
     this.physics.add.collider(this.balls, this.bricks, (ball, brick: any) => {
-        // Verifica se o bloco é especial antes de destruir
-        if (
-        this.specialBlocks &&
-        this.specialBlocks.includes(brick as Phaser.Physics.Arcade.Image)
-        ) {
-        this.multiplyBalls(); // Multiplica ao destruir bloco especial
-        }  
-        
-        if (!brick.getData('indestructible')) {
-            brick.destroy();
-        }
-        
-        const allBricks =
-        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+      // Verifica se o bloco é especial antes de destruir
+      if (
+        this.multiplyBallBlocks &&
+        this.multiplyBallBlocks.includes(brick as Phaser.Physics.Arcade.Image)
+      ) {
+        this.multiplyBalls();
+      } else if (
+        this.invertScreenBlocks &&
+        this.invertScreenBlocks.includes(brick as Phaser.Physics.Arcade.Image)
+      ) {
+        this.invertScreen();
+      } else if (
+        this.speedBoostBlocks &&
+        this.speedBoostBlocks.includes(brick as Phaser.Physics.Arcade.Image)
+      ) {
+        this.speedBoost();
+      }
+      
+      if (!brick.getData('indestructible')) {
+          brick.destroy();
+      }
+      
+      const allBricks =
+      this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
 
-        // 🔸 Filtra apenas os blocos que são quebráveis
-        const breakableBricks = allBricks.filter(
-        (brick) => !brick.getData('indestructible')
-        );
+      // 🔸 Filtra apenas os blocos que são quebráveis
+      const breakableBricks = allBricks.filter(
+      (brick) => !brick.getData('indestructible')
+      );
 
-        if (breakableBricks.length === 0) {
-            // menu ao completar fase
-            CompleteMenu(this.physics, this);
-            this.finish();
-        }
+      if (breakableBricks.length === 0) {
+          // menu ao completar fase
+          CompleteMenu(this.physics, this);
+          this.finish();
+      }
     });
 
     // Input: mover paddle com pointer/touch
@@ -181,7 +184,7 @@ export default class map extends BaseFase {
     // Inicia o nível
     startLevel(this.balls, this.launchBall.bind(this), this.physics, this.input);
 
-    // Pausar com tecla P
+    // comandos por teclado
     if (this.input.keyboard) {
       this.input.keyboard.on('keydown-P', () => {
         if (isGameStarted && !isPaused) pause(this.physics);
@@ -190,6 +193,15 @@ export default class map extends BaseFase {
       this.input.keyboard.on('keydown-E', () => {
         CompleteMenu(this.physics, this);
         this.finish();
+      });
+      this.input.keyboard.on('keydown-A', () => {
+        this.multiplyBalls();
+      });
+      this.input.keyboard.on('keydown-S', () => {
+        this.speedBoost();
+      });
+      this.input.keyboard.on('keydown-D', () => {
+        this.invertScreen();
       });
     }
   }
@@ -226,86 +238,159 @@ export default class map extends BaseFase {
     this.startTime = Date.now();
   }
 
-    multiplyBalls() {
-        const newBallsCount = this.balls.getChildren().length + 2;
+  multiplyBalls() {
+    const newBallsCount = this.balls.getChildren().length * 2;
 
-        for (let i = this.balls.getChildren().length; i < newBallsCount; i++) {
-            let newBall = this.physics.add.image(
-            this.paddle.x,
-            this.paddle.y - 50,
-            'ball'
-            );
-            // 🔸 Copia o tamanho da bola original
-            newBall.setDisplaySize(this.ball.displayWidth, this.ball.displayHeight);
+    for (let i = this.balls.getChildren().length; i < newBallsCount; i++) {
+      let newBall = this.physics.add.image(
+      this.paddle.x,
+      this.paddle.y - 50,
+      'ball'
+      );
+      // 🔸 Copia o tamanho da bola original
+      newBall.setDisplaySize(this.ball.displayWidth, this.ball.displayHeight);
 
-            this.balls.add(newBall);
+      this.balls.add(newBall);
 
-            newBall.setCollideWorldBounds(true);
-            newBall.setDisplaySize(12, 12)
-            newBall.setBounce(1);
-            newBall.setTintFill(0x00FFFF);
-            newBall.setVelocityY(-420);
-            newBall.setVelocityX(Phaser.Math.Between(-420, 420));
+      newBall.setCollideWorldBounds(true);
+      newBall.setDisplaySize(12, 12)
+      newBall.setBounce(1);
+      newBall.setTintFill(0x00FFFF);
+      newBall.setVelocityY(-420);
+      newBall.setVelocityX(Phaser.Math.Between(-420, 420));
 
-            this.physics.add.collider(newBall, this.paddle, (ball, paddle) => {
-            const b = ball as Phaser.Physics.Arcade.Image;
-            const p = paddle as Phaser.Physics.Arcade.Image;
-            const diff = b.x - p.x;
-            b.setVelocityX(10 * diff);
-            });
+      this.physics.add.collider(newBall, this.paddle, (ball, paddle) => {
+        const b = ball as Phaser.Physics.Arcade.Image;
+        const p = paddle as Phaser.Physics.Arcade.Image;
+        const diff = b.x - p.x;
+        b.setVelocityX(10 * diff);
+      });
+    }
+  }
+
+  // Função de inverter a tela
+  invertScreen() {
+    this.isScreenInverted = true;
+
+    // Rotaciona a câmera 180 graus
+    this.cameras.main.setRotation(Math.PI);
+
+    // Restaura a câmera após 5 segundos
+    this.time.delayedCall(5000, () => {
+      this.cameras.main.setRotation(0);
+      this.isScreenInverted = false;
+    });
+  }
+
+  // Função de acelerar as bolas
+  speedBoost() {
+    this.balls.getChildren().forEach((b) => {
+      const ball = b as Phaser.Physics.Arcade.Image;
+      if (!ball || !ball.body) return;
+
+      const body = ball.body as Phaser.Physics.Arcade.Body;
+
+      // Aumenta a velocidade em 50%
+      const currentVelX = body.velocity.x;
+      const currentVelY = body.velocity.y;
+
+      ball.setVelocityX(currentVelX * 1.25);
+      ball.setVelocityY(currentVelY * 1.25);
+
+      // Efeito visual: deixa a bola amarela temporariamente
+      ball.setTintFill(0xffff00);
+      this.ball.setTintFill(0xff4000);
+
+      // Restaura a velocidade e cor após 5 segundos
+      this.time.delayedCall(5000, () => {
+        if (ball && ball.body) {
+          const body = ball.body as Phaser.Physics.Arcade.Body;
+          ball.setVelocityX(body.velocity.x / 1.25);
+          ball.setVelocityY(body.velocity.y / 1.25);
+          ball.setTintFill(0x00FFFF);
+          this.ball.setTintFill(0xffffff);
         }
+      });
+    });
+  }
+
+  // NOVA função para selecionar múltiplos blocos especiais e a quantidade
+  setSpecialBlocks(totalSpecialBlocks = 0): void {
+    const allBricks =
+      this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+
+    const breakableBricks = allBricks.filter(
+      (brick) => !brick.getData('indestructible')
+    );
+
+    if (breakableBricks.length < totalSpecialBlocks) {
+      console.warn('Não há blocos quebráveis suficientes para especiais.');
+      return;
     }
 
-    // NOVA função para selecionar múltiplos blocos especiais
-    setSpecialBlocks(minSpecialBlocks = 3): Phaser.Physics.Arcade.Image[] {
-        const allBricks =
-        this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
+    // Divide os blocos especiais entre os três tipos
+    const multiplyCount = 5;
+    const invertCount = 3;
+    const speedBoostCount = 2;
 
-        // 🔸 Filtra apenas os blocos que são quebráveis
-        const breakableBricks = allBricks.filter(
-        (brick) => !brick.getData('indestructible')
-        );
+    this.multiplyBallBlocks = [];
+    this.invertScreenBlocks = [];
+    this.speedBoostBlocks = [];
 
-        const specialBlocks: Phaser.Physics.Arcade.Image[] = [];
+    const selectedIndices = new Set<number>();
 
-        if (breakableBricks.length < minSpecialBlocks) {
-        console.warn('Não há blocos quebráveis suficientes para especiais.');
-        return specialBlocks;
-        }
-
-        const selectedIndices = new Set<number>();
-        while (selectedIndices.size < minSpecialBlocks) {
-        const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
+    // Seleciona blocos para multiplicar bolas (ROXO - 0x9D00FF)
+    while (this.multiplyBallBlocks.length < multiplyCount) {
+      const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
+      if (!selectedIndices.has(randomIndex)) {
         selectedIndices.add(randomIndex);
+        const specialBlock = breakableBricks[randomIndex];
+        specialBlock.setTintFill(0x9d00ff); // Roxo
+        this.multiplyBallBlocks.push(specialBlock);
+      }
+    }
+
+    // Seleciona blocos para inverter tela (Cinza - 0xAA9797)
+    while (this.invertScreenBlocks.length < invertCount) {
+      const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
+      if (!selectedIndices.has(randomIndex)) {
+        selectedIndices.add(randomIndex);
+        const specialBlock = breakableBricks[randomIndex];
+        specialBlock.setTintFill(0xaa9797); // Cinza
+        this.invertScreenBlocks.push(specialBlock);
+      }
+    }
+
+    // Seleciona blocos para acelerar bolas (AMARELO - 0xFFFF00)
+    while (this.speedBoostBlocks.length < speedBoostCount) {
+      const randomIndex = Phaser.Math.Between(0, breakableBricks.length - 1);
+      if (!selectedIndices.has(randomIndex)) {
+        selectedIndices.add(randomIndex);
+        const specialBlock = breakableBricks[randomIndex];
+        specialBlock.setTintFill(0xffff00); // Amarelo
+        this.speedBoostBlocks.push(specialBlock);
+      }
+    }
+  }
+
+  override update(_time: number, _delta: number): void {
+    // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
+
+    //reset
+    const H = this.scale.height;
+
+    this.balls.getChildren().forEach((b) => {
+      const ball = b as Phaser.Physics.Arcade.Image;
+
+      // Se a bola passou do limite inferior
+      if (ball.y > H) {
+        ball.destroy();
+
+        if (ball === this.ball) {
+          restartLevel(this);
+          return;
         }
-
-        selectedIndices.forEach((index) => {
-        const specialBlock = breakableBricks[index];
-        specialBlock.setTintFill(0x00FFFF); // destaca em vermelho
-        specialBlocks.push(specialBlock);
-        });
-
-        return specialBlocks;
-    }
-
-    override update(_time: number, _delta: number): void {
-        // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
-
-        //reset
-        const H = this.scale.height;
-
-        this.balls.getChildren().forEach((b) => {
-          const ball = b as Phaser.Physics.Arcade.Image;
-
-          // Se a bola passou do limite inferior
-          if (ball.y > H) {
-            ball.destroy();
-
-            if (ball === this.ball) {
-              restartLevel(this);
-              return;
-            }
-          }
-        });
-    }
+      }
+    });
+  }
 }

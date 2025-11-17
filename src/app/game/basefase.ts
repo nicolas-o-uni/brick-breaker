@@ -11,6 +11,10 @@ export abstract class BaseFase extends Phaser.Scene {
   paddle!: Phaser.Physics.Arcade.Image;
   bricks!: Phaser.Physics.Arcade.StaticGroup;
   specialBlocks!: Phaser.Physics.Arcade.Image[]; // Agora é uma lista
+  multiplyBallBlocks!: Phaser.Physics.Arcade.Image[];
+  invertScreenBlocks!: Phaser.Physics.Arcade.Image[];
+  speedBoostBlocks!: Phaser.Physics.Arcade.Image[];
+  isScreenInverted: boolean = false;
 
   async createBase(faseName: string) {
     this.faseName = faseName;
