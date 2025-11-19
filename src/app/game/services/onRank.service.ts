@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, getDocs, query, orderBy, limit, where } from "firebase/firestore";
+import { LocationService } from "./location.service";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -22,6 +23,10 @@ export class RankService {
 
   static async saveScore(mapId: string, playerName: string, newTime: number) {
     try {
+      const region = await LocationService.getRegion();
+      const country = region?.country || "Desconhecido";
+      const state = region?.state || "Indefinido";
+
       const docRef = doc(db, "ranks", mapId, "scores", playerName);
       const snapshot = await getDoc(docRef);
 
@@ -33,6 +38,8 @@ export class RankService {
           await setDoc(docRef, {
             name: playerName,
             time: newTime,
+            country,
+            state,
             date: serverTimestamp()
           });
           console.log(`🏁 Novo recorde em ${mapId}: ${newTime}s (melhor que ${oldTime}s)`);
@@ -44,6 +51,8 @@ export class RankService {
         await setDoc(docRef, {
           name: playerName,
           time: newTime,
+          country,
+          state,
           date: serverTimestamp()
         });
         console.log(`✅ Primeiro tempo salvo em ${mapId}: ${newTime}s`);
@@ -53,13 +62,46 @@ export class RankService {
     }
   }
 
-  static async getTopScores(mapId: string) {
-    const scoresRef = collection(db, "ranks", mapId, "scores");
-    const q = query(scoresRef, orderBy("score", "asc"), limit(10)); // menor tempo = melhor
-    const snapshot = await getDocs(q);
+  static async getTopScores(mapId: string, regionFilter?: { country?: string, state?: string }) {
+    try {
+      const scoresRef = collection(db, "ranks", mapId, "scores");
 
-    const results = snapshot.docs.map(doc => doc.data());
-    console.log("🏆 Ranking:", results);
-    return results;
+      let q;
+      if (regionFilter?.state) {
+        // filtro por estado
+        q = query(
+          scoresRef,
+          where("state", ">=", regionFilter.state),
+          where("state", "<=", regionFilter.state + "\uf8ff"),
+          orderBy("state"),
+          orderBy("time", "asc"),
+          limit(10)
+        );
+      } else if (regionFilter?.country) {
+        // filtro por país
+        q = query(scoresRef, where("country", "==", regionFilter.country), orderBy("time", "asc"), limit(10));
+      } else {
+        // mundial
+        q = query(scoresRef, orderBy("time", "asc"), limit(10));
+      }
+
+      const snapshot = await getDocs(q);
+      const results = snapshot.docs.map(d => {
+        const data = d.data();
+        // padroniza keys pra evitar undefined em tempo de render
+        return {
+          name: data["name"] || "---",
+          time: typeof data["time"] === "number" ? data["time"] : Number.POSITIVE_INFINITY,
+          country: data["country"] || null,
+          state: data["state"] || null,
+          date: data["date"] || null
+        };
+      });
+
+      return results;
+    } catch (err) {
+      console.error("Erro ao buscar ranking:", err);
+      return [];
+    }
   }
 }

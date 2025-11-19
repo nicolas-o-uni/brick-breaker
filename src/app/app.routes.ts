@@ -20,5 +20,11 @@ export const routes: Routes = [
     path: 'fase-select',
     loadComponent: () =>
       import('./pages/fase-select/fase-select.page').then(m => m.FaseSelectPage)
+  },
+  {
+    path: 'all-rank',
+    loadComponent: () =>
+      import('./pages/all-rank/all-rank.page').then(m => m.AllRankPage)
   }
 ];
+
