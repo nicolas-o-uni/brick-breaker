@@ -339,7 +339,7 @@ export function createGame(): Phaser.Game {
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     width: window.innerWidth,
-    height: 600,
+    height: window.innerHeight,
     parent: 'game-container',
     physics: {
       default: 'arcade',
