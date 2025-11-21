@@ -8,44 +8,58 @@ import {
   restartLevel,
   CompleteMenu,
   isInMenu,
-} from 'src/app/game/phaser-game';
+} from '../phaser-game';
+import { BaseFase } from '../basefase';
+import { RankService } from '../services/onRank.service';
+import {
+  isRankRunEnabled,
+  RankRunData,
+  RankRunState,
+  nextLevel,
+} from '../phaser-game';
 
-export default class MainScene extends Phaser.Scene {
-  ball!: Phaser.Physics.Arcade.Image;
-  balls!: Phaser.Physics.Arcade.Group;
-  paddle!: Phaser.Physics.Arcade.Image;
-  bricks!: Phaser.Physics.Arcade.StaticGroup;
-  unbreakableBricks!: Phaser.Physics.Arcade.StaticGroup;
-  multiplyBallBlocks!: Phaser.Physics.Arcade.Image[];
-  invertScreenBlocks!: Phaser.Physics.Arcade.Image[];
-  speedBoostBlocks!: Phaser.Physics.Arcade.Image[];
-  isScreenInverted: boolean = false;
-
+export default class map extends BaseFase {
   constructor() {
     super({ key: 'map5' });
   }
 
   preload() {
+    // caminhos relativos à root do app: src/assets/ -> 'assets/...'
     this.load.image('ball', 'assets/images/Ball Gray.png');
     this.load.image('paddle', 'assets/images/Paddle Orange.png');
     this.load.image('brick', 'assets/images/Block Orange.png');
+
+    this.load.audio('paddle-hit', 'assets/sounds/paddle-hit.wav');
+    this.load.audio('brick-hit', 'assets/sounds/brick-hit.wav');
+  }
+
+  async init() {
+    this.onProgressLoaded = () => {
+      if (this.progress.levelsCleared.includes('map5')) {
+        console.log('Fase já concluída!');
+      }
+    };
+    await this.createBase('map5');
   }
 
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
 
+    this.paddleSound = this.sound.add('paddle-hit', { volume: 0.5 });
+    this.brickSound = this.sound.add('brick-hit', { volume: 0.5 });
+
+    // Physics world
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
 
+    // Cria grupo de bolas antes de criar a primeira bola
     this.balls = this.physics.add.group({
       defaultKey: 'ball',
-      maxSize: 10,
-      collideWorldBounds: true,
-      bounceX: 1,
-      bounceY: 1,
+      maxSize: 1000,
     });
 
+    // Cria a bola inicial
     this.ball = this.physics.add
       .image(W / 2, H - 60, 'ball')
       .setCollideWorldBounds(true)
@@ -53,8 +67,10 @@ export default class MainScene extends Phaser.Scene {
       .setBounce(1);
     (this.ball.body as Phaser.Physics.Arcade.Body).allowGravity = false;
 
+    // Adiciona a bola ao grupo
     this.balls.add(this.ball);
 
+    // Lógica para todas as bolas do grupo
     this.balls.getChildren().forEach((b) => {
       const ball = b as Phaser.Physics.Arcade.Image;
       if (!ball || !ball.body) return;
@@ -63,26 +79,30 @@ export default class MainScene extends Phaser.Scene {
       (ball.body as Phaser.Physics.Arcade.Body).onWorldBounds = true;
     });
 
+    // Paddle
     this.paddle = this.physics.add
       .image(W / 2, H - 40, 'paddle')
       .setImmovable(true)
-      .setDisplaySize(60, 10)
+      .setDisplaySize(60, 10) // define tamanho real
       .setCollideWorldBounds(true) as Phaser.Physics.Arcade.Image;
     (this.paddle!.body as any).allowGravity = false;
 
-    this.bricks = this.physics.add.staticGroup();
-    this.unbreakableBricks = this.physics.add.staticGroup();
+    // Criação de mapa, realocação de blocos, destrutives quantos indestrutiveis
 
-    const bw = 21;
-    const bh = 12;
+    this.bricks = this.physics.add.staticGroup();
+
+    const bw = 21; // largura do bloco
+    const bh = 12; // altura do bloco
     const marginX = 1;
     const marginY = 4;
 
-    const cols = 18;
-    const rows = 12;
+    const cols = 18; // largura total do mapa
+    const rows = 12; // altura total
     const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
     const startY = 60;
 
+    // Matriz do layout
+    // N = nenhum bloco, Y = amarelo, P = roxo, G = verde
     const layout = [
       'NNNNNNYYYYYNNNNNNN',
       'PPPNYYYYYYYYYNNNNP',
@@ -111,36 +131,37 @@ export default class MainScene extends Phaser.Scene {
         brick.displayHeight = bh;
         brick.refreshBody();
 
+        // Aplica cor conforme letra
         switch (char) {
           case 'Y':
-            brick.setTintFill(0x00f000);
+            brick.setTintFill(0x00f000); // amarelo
             break;
           case 'P':
-            brick.setTintFill(0x060270);
+            brick.setTintFill(0x9c27b0); // roxo
             break;
           case 'G':
-            brick.setTintFill(0x00ff00);
+            brick.setTintFill(0x00ff00); // verde
             break;
           case 'I':
-            brick.setTintFill(0xff4c4c);
+            brick.setTintFill(0xff4c4c); // indestrutivel
             brick.setData('indestructible', true);
             break;
         }
       }
     }
+    this.setSpecialBlocks();
 
-    // Define blocos especiais com cores específicas
-    this.setSpecialBlocks(10);
-
+    // Colliders
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {
       const b = ball as Phaser.Physics.Arcade.Image;
       const p = paddle as Phaser.Physics.Arcade.Image;
       const diff = b.x - p.x;
       b.setVelocityX(10 * diff);
+      this.paddleSound.play();
     });
 
     this.physics.add.collider(this.balls, this.bricks, (ball, brick: any) => {
-      // Verifica qual tipo de bloco especial foi atingido
+      // Verifica se o bloco é especial antes de destruir
       if (
         this.multiplyBallBlocks &&
         this.multiplyBallBlocks.includes(brick as Phaser.Physics.Arcade.Image)
@@ -160,21 +181,23 @@ export default class MainScene extends Phaser.Scene {
 
       if (!brick.getData('indestructible')) {
         brick.destroy();
+        this.brickSound.play();
       }
 
       const allBricks =
         this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
 
+      // 🔸 Filtra apenas os blocos que são quebráveis
       const breakableBricks = allBricks.filter(
         (brick) => !brick.getData('indestructible')
       );
 
       if (breakableBricks.length === 0) {
+        // menu ao completar fase
         CompleteMenu(this.physics, this);
+        this.finish();
       }
     });
-
-    this.physics.add.collider(this.balls, this.unbreakableBricks);
 
     // Input: mover paddle com pointer/touch
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
@@ -185,6 +208,7 @@ export default class MainScene extends Phaser.Scene {
       );
     });
 
+    // Inicia o nível
     startLevel(
       this.balls,
       this.launchBall.bind(this),
@@ -192,6 +216,7 @@ export default class MainScene extends Phaser.Scene {
       this.input
     );
 
+    // comandos por teclado
     if (this.input.keyboard) {
       this.input.keyboard.on('keydown-P', () => {
         if (isGameStarted && !isPaused) pause(this.physics);
@@ -199,10 +224,44 @@ export default class MainScene extends Phaser.Scene {
       });
       this.input.keyboard.on('keydown-E', () => {
         CompleteMenu(this.physics, this);
+        this.finish();
+      });
+      this.input.keyboard.on('keydown-A', () => {
+        this.multiplyBalls();
+      });
+      this.input.keyboard.on('keydown-S', () => {
+        this.speedBoost();
+      });
+      this.input.keyboard.on('keydown-D', () => {
+        this.invertScreen();
       });
     }
   }
 
+  async finish() {
+    await this.winLevel();
+
+    const timeInSeconds = (Date.now() - this.startTime) / 1000;
+    const mapName = this.faseName;
+
+    // Se estiver em RankRun, acumula e vai automaticamente para a próxima cena
+    if (isRankRunEnabled()) {
+      RankRunData.totalTime += timeInSeconds;
+      RankRunData.mapTimes[mapName] = timeInSeconds;
+
+      // salva recorde individual se for melhor
+      await RankService.saveScore(
+        this.faseName,
+        RankRunState.name,
+        timeInSeconds
+      );
+
+      nextLevel(this);
+      return;
+    }
+  }
+
+  // Função de lançamento da bola
   launchBall(ball?: Phaser.Physics.Arcade.Image) {
     const b = ball || this.ball;
     if (!b || !b.body) return;
@@ -211,10 +270,12 @@ export default class MainScene extends Phaser.Scene {
 
     b.setVelocityX(0);
     b.setVelocityY(speed);
+
+    this.startTime = Date.now();
   }
 
   multiplyBalls() {
-    const newBallsCount = this.balls.getChildren().length + 1;
+    const newBallsCount = this.balls.getChildren().length * 2;
 
     for (let i = this.balls.getChildren().length; i < newBallsCount; i++) {
       let newBall = this.physics.add.image(
@@ -222,60 +283,29 @@ export default class MainScene extends Phaser.Scene {
         this.paddle.y - 50,
         'ball'
       );
+      // 🔸 Copia o tamanho da bola original
       newBall.setDisplaySize(this.ball.displayWidth, this.ball.displayHeight);
 
       this.balls.add(newBall);
 
       newBall.setCollideWorldBounds(true);
+      newBall.setDisplaySize(12, 12);
       newBall.setBounce(1);
-      newBall.setTintFill(0xffffff);
-      newBall.setVelocityY(-360);
-      newBall.setVelocityX(Phaser.Math.Between(-360, 360));
+      newBall.setTintFill(0x00ffff);
+      newBall.setVelocityY(-420);
+      newBall.setVelocityX(Phaser.Math.Between(-420, 420));
 
       this.physics.add.collider(newBall, this.paddle, (ball, paddle) => {
         const b = ball as Phaser.Physics.Arcade.Image;
         const p = paddle as Phaser.Physics.Arcade.Image;
         const diff = b.x - p.x;
         b.setVelocityX(10 * diff);
-      });
-
-      // Adiciona colisão com os blocos para a nova bola
-      this.physics.add.collider(newBall, this.bricks, (ball, brick: any) => {
-        if (
-          this.multiplyBallBlocks &&
-          this.multiplyBallBlocks.includes(brick as Phaser.Physics.Arcade.Image)
-        ) {
-          this.multiplyBalls();
-        } else if (
-          this.invertScreenBlocks &&
-          this.invertScreenBlocks.includes(brick as Phaser.Physics.Arcade.Image)
-        ) {
-          this.invertScreen();
-        } else if (
-          this.speedBoostBlocks &&
-          this.speedBoostBlocks.includes(brick as Phaser.Physics.Arcade.Image)
-        ) {
-          this.speedBoost();
-        }
-
-        if (!brick.getData('indestructible')) {
-          brick.destroy();
-        }
-
-        const allBricks =
-          this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
-
-        const breakableBricks = allBricks.filter(
-          (brick) => !brick.getData('indestructible')
-        );
-
-        if (breakableBricks.length === 0) {
-          CompleteMenu(this.physics, this);
-        }
+        this.paddleSound.play();
       });
     }
   }
 
+  // Função de inverter a tela
   invertScreen() {
     this.isScreenInverted = true;
 
@@ -289,6 +319,7 @@ export default class MainScene extends Phaser.Scene {
     });
   }
 
+  // Função de acelerar as bolas
   speedBoost() {
     this.balls.getChildren().forEach((b) => {
       const ball = b as Phaser.Physics.Arcade.Image;
@@ -300,25 +331,28 @@ export default class MainScene extends Phaser.Scene {
       const currentVelX = body.velocity.x;
       const currentVelY = body.velocity.y;
 
-      ball.setVelocityX(currentVelX * 1.5);
-      ball.setVelocityY(currentVelY * 1.5);
+      ball.setVelocityX(currentVelX * 1.25);
+      ball.setVelocityY(currentVelY * 1.25);
 
       // Efeito visual: deixa a bola amarela temporariamente
       ball.setTintFill(0xffff00);
+      this.ball.setTintFill(0xff4000);
 
       // Restaura a velocidade e cor após 5 segundos
       this.time.delayedCall(5000, () => {
         if (ball && ball.body) {
           const body = ball.body as Phaser.Physics.Arcade.Body;
-          ball.setVelocityX(body.velocity.x / 1.5);
-          ball.setVelocityY(body.velocity.y / 1.5);
-          ball.setTintFill(0xffffff);
+          ball.setVelocityX(body.velocity.x / 1.25);
+          ball.setVelocityY(body.velocity.y / 1.25);
+          ball.setTintFill(0x00ffff);
+          this.ball.setTintFill(0xffffff);
         }
       });
     });
   }
 
-  setSpecialBlocks(totalSpecialBlocks = 6): void {
+  // NOVA função para selecionar múltiplos blocos especiais e a quantidade
+  setSpecialBlocks(totalSpecialBlocks = 0): void {
     const allBricks =
       this.bricks.getChildren() as Phaser.Physics.Arcade.Image[];
 
@@ -332,9 +366,9 @@ export default class MainScene extends Phaser.Scene {
     }
 
     // Divide os blocos especiais entre os três tipos
-    const multiplyCount = Math.floor(totalSpecialBlocks / 3);
-    const invertCount = Math.floor(totalSpecialBlocks / 3);
-    const speedBoostCount = Math.floor(totalSpecialBlocks / 3);
+    const multiplyCount = 5;
+    const invertCount = 3;
+    const speedBoostCount = 2;
 
     this.multiplyBallBlocks = [];
     this.invertScreenBlocks = [];
@@ -377,16 +411,21 @@ export default class MainScene extends Phaser.Scene {
   }
 
   override update(_time: number, _delta: number): void {
+    // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
+
+    //reset
     const H = this.scale.height;
 
     this.balls.getChildren().forEach((b) => {
       const ball = b as Phaser.Physics.Arcade.Image;
 
+      // Se a bola passou do limite inferior
       if (ball.y > H) {
         ball.destroy();
 
-        if (this.balls.countActive() === 0) {
+        if (ball === this.ball) {
           restartLevel(this);
+          return;
         }
       }
     });
