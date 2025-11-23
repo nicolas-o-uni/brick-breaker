@@ -6,6 +6,9 @@ export abstract class BaseFase extends Phaser.Scene {
   protected faseName!: string;
   onProgressLoaded?: () => void;
   startTime!: number;
+  timerText!: Phaser.GameObjects.Text;
+  gameTime: number = 0; // Tempo acumulado em ms
+  pauseMenuContainer!: Phaser.GameObjects.Container;
   ball!: Phaser.Physics.Arcade.Image;
   balls!: Phaser.Physics.Arcade.Group;
   paddle!: Phaser.Physics.Arcade.Image;
@@ -15,6 +18,8 @@ export abstract class BaseFase extends Phaser.Scene {
   invertScreenBlocks!: Phaser.Physics.Arcade.Image[];
   speedBoostBlocks!: Phaser.Physics.Arcade.Image[];
   isScreenInverted: boolean = false;
+  paddleSound!: Phaser.Sound.BaseSound;
+  brickSound!: Phaser.Sound.BaseSound;
 
   async createBase(faseName: string) {
     this.faseName = faseName;

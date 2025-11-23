@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
-import { startLevel, pause, isPaused, resume, isGameStarted, restartLevel, CompleteMenu, isInMenu } from '../phaser-game';
+import { startLevel, pause, isPaused, resume, togglePauseState, isGameStarted, restartLevel, CompleteMenu, isInMenu, destroyGame } from '../phaser-game';
 import { BaseFase } from '../basefase';
 import { RankService } from "../services/onRank.service";
 import { isRankRunEnabled, RankRunData, RankRunState, nextLevel } from '../phaser-game';
+import { createHUD, createPauseMenu } from '../visual';
 
 export default class map extends BaseFase {
 
@@ -13,6 +14,9 @@ export default class map extends BaseFase {
     this.load.image('ball', 'assets/images/Ball Red.png');
     this.load.image('paddle', 'assets/images/Paddle Blue.png');
     this.load.image('brick', 'assets/images/Block Blue.png' );
+
+    this.load.audio('paddle-hit', 'assets/sounds/paddle-hit.wav');
+    this.load.audio('brick-hit', 'assets/sounds/brick-hit.wav');
   }
 
   async init() {
@@ -22,15 +26,24 @@ export default class map extends BaseFase {
       }
     };
     await this.createBase('map3');
+
+    this.gameTime = 0;
   }
 
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
 
+    this.paddleSound = this.sound.add('paddle-hit', { volume: 0.5 });
+    this.brickSound = this.sound.add('brick-hit', { volume: 0.5 });
+
     // Physics world
     this.physics.world.setBounds(0, 0, W, H);
     this.physics.world.setBoundsCollision(true, true, true, false);
+
+    // Criação do hud
+    const hud = createHUD(this, W, () => this.handleToggleMenu());
+    this.timerText = hud.timerText;
 
     // Cria grupo de bolas antes de criar a primeira bola
     this.balls = this.physics.add.group({
@@ -77,7 +90,7 @@ export default class map extends BaseFase {
     const cols = 18; // largura total do mapa
     const rows = 12; // altura total
     const startX = (W - cols * (bw + marginX)) / 2 + bw / 2;
-    const startY = 100;
+    const startY = 170;
 
     // Matriz do layout
     // N = nenhum bloco, Y = amarelo, P = roxo, G = verde
@@ -128,11 +141,14 @@ export default class map extends BaseFase {
     
     
     // Colliders
+    this.physics.add.collider(this.balls, hud.headerBg, () => {});
+
     this.physics.add.collider(this.ball, this.paddle, (ball, paddle) => {
       const b = ball as Phaser.Physics.Arcade.Image;
       const p = paddle as Phaser.Physics.Arcade.Image;
       const diff = b.x - p.x;
       b.setVelocityX(10 * diff);
+      this.paddleSound.play();
     });
 
     this.physics.add.collider(this.balls, this.bricks, (ball, brick: any) => {
@@ -155,7 +171,8 @@ export default class map extends BaseFase {
       }
       
       if (!brick.getData('indestructible')) {
-          brick.destroy();
+        brick.destroy();
+        this.brickSound.play();
       }
       
       const allBricks =
@@ -167,9 +184,12 @@ export default class map extends BaseFase {
       );
 
       if (breakableBricks.length === 0) {
-          // menu ao completar fase
+        // menu ao completar fase
+        if (!isRankRunEnabled()) {
           CompleteMenu(this.physics, this);
-          this.finish();
+        }
+        pause(this.physics);
+        this.finish();
       }
     });
 
@@ -181,14 +201,24 @@ export default class map extends BaseFase {
     // Inicia o nível
     startLevel(this.balls, this.launchBall.bind(this), this.physics, this.input);
 
+    this.pauseMenuContainer = createPauseMenu(this, W, H, 
+      () => this.handleToggleMenu(), // Callback Retomar
+      () => {                        // Callback Sair
+        destroyGame();
+        window.location.replace('/fase-select');
+      }
+    );
+
     // comandos por teclado
     if (this.input.keyboard) {
       this.input.keyboard.on('keydown-P', () => {
-        if (isGameStarted && !isPaused) pause(this.physics);
-        else if (isPaused) resume(this.physics);
+        this.handleToggleMenu();
       });
       this.input.keyboard.on('keydown-E', () => {
-        CompleteMenu(this.physics, this);
+        if (!isRankRunEnabled()) {
+          CompleteMenu(this.physics, this);
+        }
+        pause(this.physics);
         this.finish();
       });
       this.input.keyboard.on('keydown-A', () => {
@@ -201,6 +231,10 @@ export default class map extends BaseFase {
         this.invertScreen();
       });
     }
+  }
+
+  handleToggleMenu() {
+    togglePauseState(this.physics, this.pauseMenuContainer);
   }
 
   async finish() {
@@ -260,6 +294,8 @@ export default class map extends BaseFase {
       const p = paddle as Phaser.Physics.Arcade.Image;
       const diff = b.x - p.x;
       b.setVelocityX(10 * diff);
+
+      this.paddleSound.play();
       });
     }
   }
@@ -290,8 +326,8 @@ export default class map extends BaseFase {
       const currentVelX = body.velocity.x;
       const currentVelY = body.velocity.y;
 
-      ball.setVelocityX(currentVelX * 1.25);
-      ball.setVelocityY(currentVelY * 1.25);
+      ball.setVelocityX(currentVelX * 1.5);
+      ball.setVelocityY(currentVelY * 1.5);
 
       // Efeito visual: deixa a bola amarela temporariamente
       ball.setTintFill(0xffff00);
@@ -301,8 +337,8 @@ export default class map extends BaseFase {
       this.time.delayedCall(5000, () => {
         if (ball && ball.body) {
           const body = ball.body as Phaser.Physics.Arcade.Body;
-          ball.setVelocityX(body.velocity.x / 1.25);
-          ball.setVelocityY(body.velocity.y / 1.25);
+          ball.setVelocityX(body.velocity.x / 1.5);
+          ball.setVelocityY(body.velocity.y / 1.5);
           ball.setTintFill(0x00FFFF);
           this.ball.setTintFill(0xffffff);
         }
@@ -369,22 +405,25 @@ export default class map extends BaseFase {
     }
   }
 
-  override update(_time: number, _delta: number): void {
-    // Aqui pode adicionar lógica por frame, modificadores temporários, etc.
+  override update(time: number, delta: number): void {
+    // Atualiza Timer
+    if (isGameStarted && !isPaused && !isInMenu) {
+      this.gameTime += delta;
+      const totalSeconds = Math.floor(this.gameTime / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      this.timerText.setText(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    }
 
-    //reset
+    // reset
     const H = this.scale.height;
-
     this.balls.getChildren().forEach((b) => {
       const ball = b as Phaser.Physics.Arcade.Image;
-
-      // Se a bola passou do limite inferior
       if (ball.y > H) {
         ball.destroy();
-
         if (ball === this.ball) {
           restartLevel(this);
-          return;
+          this.gameTime = 0;
         }
       }
     });

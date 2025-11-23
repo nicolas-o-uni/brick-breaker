@@ -1,43 +1,59 @@
-
-
 <ion-content class="content">
+  
+  <div class="main-layout">
+    
+    <div class="header-controls">
+      <div class="icon-btn back-btn" (click)="goBack()">
+        <ion-icon name="arrow-back"></ion-icon>
+      </div>
+      
+      <div class="header-title">SELECT LEVEL</div>
 
-  <div #slides class="slides-container">
-
-    <div
-      class="slide"
-      *ngFor="let fase of fases"
-      (click)="openMap(fase.img)"
-    >
-      <img [src]="fase.img" />
+      <div class="icon-btn rank-btn" (click)="goToRank()">
+        <ion-icon name="trophy-outline"></ion-icon>
+      </div>
     </div>
 
+    <div class="slides-wrapper">
+      <div #slides class="slides-container">
+        <div
+          class="slide"
+          *ngFor="let fase of fases; let i = index"
+          (click)="openMap(i)"
+        >
+          <img
+            [src]="fase.img"
+            [style.filter]="unlocked[i] ? 'brightness(100%) contrast(1.1)' : 'brightness(40%) grayscale(80%)'"
+          />
+          
+          <div *ngIf="!unlocked[i]" class="locked-overlay">
+            <div class="locked-badge">
+              <span style="font-size:20px;">🔒</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <ion-button class="neon-btn" expand="block" fill="outline" (click)="refreshProgress()">
+        Atualizar Progresso
+      </ion-button>
+      <ion-button class="neon-btn-action" expand="block" (click)="startSpeedrun()">
+        INICIAR SPEEDRUN
+      </ion-button>
+    </div>
   </div>
 
+  <div class="custom-modal-overlay" *ngIf="showLockedPopup" (click)="closePopup()">
+    <div class="custom-modal" (click)="$event.stopPropagation()">
+      <div class="modal-icon">🔒</div>
+      <h2>ACESSO NEGADO</h2>
+      <p>A <strong>Fase {{ lockedPhaseNumber }}</strong> ainda está bloqueada.</p>
+      <p class="modal-sub">Complete a fase anterior para liberar o acesso.</p>
+      
+      <button class="modal-btn" (click)="closePopup()">ENTENDIDO</button>
+    </div>
+  </div>
 
 </ion-content>
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

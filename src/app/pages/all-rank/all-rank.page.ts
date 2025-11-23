@@ -105,6 +105,6 @@ export class AllRankPage implements OnInit {
   }
 
   goBack() {
-    this.navCtrl.navigateBack('/principal');
+    this.navCtrl.navigateBack('/fase-select');
   }
 }

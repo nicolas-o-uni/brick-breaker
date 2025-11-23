@@ -35,10 +35,10 @@ export default class RankedSummary extends Phaser.Scene {
     }
 
     // botão de voltar ao menu
-    const btnText = this.add.text(W/2, y + 100, 'Voltar ao Menu', { fontSize:'20px', color:'#00BFFF' }).setOrigin(0.5).setInteractive();
+    const btnText = this.add.text(W/2, y + 100, 'Ver posição', { fontSize:'20px', color:'#00BFFF' }).setOrigin(0.5).setInteractive();
     btnText.on('pointerdown', () => {
       resetRankRun();
-      window.dispatchEvent(new CustomEvent('goToPage', { detail: 'principal' }));
+      window.dispatchEvent(new CustomEvent('goToPage', { detail: 'all-rank' }));
     });
   }
 }

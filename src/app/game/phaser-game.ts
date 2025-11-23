@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import BootScene from './scenes/BootScene';
 import Scene1 from './scenes/scene1';
 import Scene2 from './scenes/scene2';
 import Scene3 from './scenes/scene3';
@@ -58,6 +59,21 @@ export function resume(physics: Phaser.Physics.Arcade.ArcadePhysics) {
   physics.resume();
 }
 
+export function togglePauseState(
+  physics: Phaser.Physics.Arcade.ArcadePhysics, 
+  menuContainer: Phaser.GameObjects.Container
+) {
+  if (menuContainer.visible) {
+    menuContainer.setVisible(false);
+    resume(physics);
+    isInMenu = false;
+  } else {
+    menuContainer.setVisible(true);
+    pause(physics);
+    isInMenu = true;
+  }
+}
+
 export function restartLevel(scene: Phaser.Scene) {
   scene.scene.restart();
 }
@@ -75,14 +91,14 @@ export function nextLevel(scene: Phaser.Scene, target?: number | string) {
     const nextNumber = parseInt(match[1]) + 1;
     nextMap = `map${nextNumber}`;
   } else {
-    nextMap = 'principal';
+    nextMap = 'fase-select';
   }
 
   // Normal flow (non-speedrun)
   if (!isRankRunEnabled()) {
-    if (!validMaps.includes(nextMap)) nextMap = 'principal';
-    if (nextMap === 'principal') {
-      window.dispatchEvent(new CustomEvent('goToPage', { detail: 'principal' }));
+    if (!validMaps.includes(nextMap)) nextMap = 'fase-select';
+    if (nextMap === 'fase-select') {
+      window.dispatchEvent(new CustomEvent('goToPage', { detail: 'fase-select' }));
     } else {
       scene.scene.stop(currentSceneKey);
       scene.scene.start(nextMap);
@@ -331,7 +347,7 @@ export function CompleteMenu(physics: Phaser.Physics.Arcade.ArcadePhysics, scene
   }
 }
 
-export function createGame(): Phaser.Game {
+export function createGame(startSceneKey: string = 'map1'): Phaser.Game {
   if (gameInstance) {
     return gameInstance;
   }
@@ -341,14 +357,22 @@ export function createGame(): Phaser.Game {
     width: window.innerWidth,
     height: window.innerHeight,
     parent: 'game-container',
+    scale: {
+      // Centraliza o canvas
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
     physics: {
       default: 'arcade',
       arcade: { gravity: { x: 0, y: 0 }, debug: false }
     },
-    scene: [Scene1, Scene2, Scene3, Scene4, Scene5, finalRank, rankPrompt]
+    scene: [BootScene, Scene1, Scene2, Scene3, Scene4, Scene5, finalRank, rankPrompt]
   };
 
   gameInstance = new Phaser.Game(config);
+
+  // Aqui está o segredo: salvamos no Registry qual cena o Boot deve abrir
+  gameInstance.registry.set('initialScene', startSceneKey);
+
   return gameInstance;
 }
 

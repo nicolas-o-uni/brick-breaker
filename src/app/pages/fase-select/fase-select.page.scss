@@ -1,115 +1,251 @@
-
-$neon-color-primary: #8665fd;   
-$neon-color-secondary: #00ffff; 
-$dark-background: #000000;
-$slide-inner-bg: #0a0a0a;       // Fundo do slide
+$neon-primary: #8665fd;    // Roxo Neon
+$neon-secondary: #00ffff;  // Ciano Neon
+$neon-alert: #ff0055;      // Rosa/Vermelho Neon (para bloqueio)
+$dark-bg: #000000;
+$panel-bg: #0a0a0a;
 
 .content {
-  /* Fundo */
-  --background: #{$dark-background};
+  --background: #{$dark-bg};
 }
 
-/* Carrossel */
+/* Layout Flex Vertical para organizar topo, meio e base */
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  justify-content: space-between;
+  padding-bottom: 20px; /* Espaço para a barra inferior do celular */
+}
+
+/* --- HEADER --- */
+.header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 20px 10px 20px;
+  width: 100%;
+  z-index: 10;
+}
+
+.header-title {
+  font-family: 'Verdana', sans-serif; /* Ou a fonte do seu jogo */
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 10px $neon-primary;
+  letter-spacing: 2px;
+  opacity: 0.8;
+}
+
+.icon-btn {
+  font-size: 28px;
+  color: #fff;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba($neon-secondary, 0.3);
+  box-shadow: 0 0 5px rgba($neon-secondary, 0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  ion-icon {
+    filter: drop-shadow(0 0 2px $neon-secondary);
+  }
+
+  &:active {
+    transform: scale(0.9);
+    background: rgba($neon-secondary, 0.2);
+    box-shadow: 0 0 15px $neon-secondary;
+    border-color: $neon-secondary;
+  }
+}
+
+.rank-btn ion-icon { color: #ffd700; filter: drop-shadow(0 0 4px #ffd700); } /* Dourado para o rank */
+
+/* --- SLIDES --- */
+.slides-wrapper {
+  flex: 1; /* Ocupa o espaço central */
+  display: flex;
+  align-items: center; /* Centraliza verticalmente */
+}
+
 .slides-container {
   display: flex;
-  gap: 20px;
-  padding: 20px 0;
-
+  gap: 25px;
+  padding: 20px 20px; /* Padding lateral para o primeiro/ultimo item */
   overflow-x: auto;
   overflow-y: hidden;
-
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-
   width: 100%;
-  justify-content: flex-start;
-  padding-left: 20px;
-}
-
-/* esconder barra */
-.slides-container::-webkit-scrollbar {
-  display: none;
+  /* Esconder scrollbar */
+  &::-webkit-scrollbar { display: none; }
 }
 
 .slide {
   flex: 0 0 280px;
-  height: 280px;
+  height: 350px; /* Um pouco mais alto para a imagem respirar */
   scroll-snap-align: center;
-
+  position: relative;
+  
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px; 
-
-  background: $slide-inner-bg;
-  border-radius: 8px; 
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
   
-  box-shadow:
-    0 0 5px rgba($neon-color-secondary, 0.7),
-    0 0 15px rgba($neon-color-primary, 0.5),
-    0 0 25px rgba($neon-color-primary, 0.3);
+  background: $panel-bg;
+  border-radius: 12px;
+  border: 1px solid rgba($neon-secondary, 0.2);
+  
+  box-shadow: 
+    0 0 10px rgba(0,0,0,0.8),
+    inset 0 0 20px rgba($neon-primary, 0.1);
 
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   user-select: none;
-  position: relative;
+
+  img {
+    width: 92%;
+    height: 92%;
+    object-fit: contain;
+    pointer-events: none;
+    border-radius: 8px;
+  }
+
+  /* Estado normal (desbloqueado) */
+  &:active {
+    transform: scale(0.97);
+    border-color: $neon-secondary;
+    box-shadow: 0 0 15px rgba($neon-secondary, 0.5);
+  }
 }
 
-/* efeito hover */
-.slide:active {
-  transform: scale(0.97);
+/* Overlay de bloqueio dentro do slide */
+.locked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.locked-badge {
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(0,0,0,1);
+}
+
+/* --- BOTÕES INFERIORES --- */
+.controls {
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Estilização Neon para os botões do Ionic */
+ion-button.neon-btn {
+  --border-color: #{$neon-secondary};
+  --color: #{$neon-secondary};
+  --background: transparent;
+  --border-radius: 8px;
+  --background-activated: rgba(0, 255, 255, 0.1);
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+ion-button.neon-btn-action {
+  --background: linear-gradient(90deg, #ff00cc 0%, #333399 100%);
+  --color: white;
+  --border-radius: 8px;
+  font-weight: bold;
+  --box-shadow: 0 0 10px rgba(255, 0, 204, 0.4);
+}
+
+/* --- MODAL / POP-UP --- */
+.custom-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.custom-modal {
+  background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+  border: 2px solid $neon-alert;
+  box-shadow: 
+    0 0 20px rgba($neon-alert, 0.4),
+    inset 0 0 20px rgba(0,0,0,0.8);
   
-  box-shadow:
-    0 0 10px $neon-color-secondary,
-    0 0 40px rgba($neon-color-primary, 0.8),
-    0 0 60px rgba($neon-color-primary, 0.6);
+  width: 85%;
+  max-width: 320px;
+  padding: 25px;
+  border-radius: 16px;
+  text-align: center;
+  color: white;
+  animation: scaleIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  .modal-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 15px $neon-alert;
+  }
+
+  h2 {
+    color: $neon-alert;
+    font-size: 22px;
+    margin: 0 0 10px 0;
+    font-weight: 900;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba($neon-alert, 0.6);
+  }
+
+  p {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #e0e0e0;
+  }
+
+  .modal-sub {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 20px;
+  }
+
+  .modal-btn {
+    background: $neon-alert;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba($neon-alert, 0.5);
+    transition: transform 0.1s;
+    width: 100%;
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
 }
 
-
-.slide img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; 
-  pointer-events: none;
-
-  /* Efeito scanline */
-  filter: brightness(1.2) contrast(1.1);
-}
-
-
-.map-preview {
-    width: 90%;
-    height: 90%;
-    background-color: $dark-background;
-    border: 2px solid $neon-color-secondary; /* Borda do mapa */
-    box-shadow: 0 0 8px $neon-color-secondary; 
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden; 
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
